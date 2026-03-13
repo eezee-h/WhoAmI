@@ -1,0 +1,25 @@
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
+frontend/tsconfig.tsbuildinfo
+
+# Backend
+backend/target/
+
+# DB / Docker
+db/data/
+
+# Env
+.env.local
+.env*.local
+
+# Tool internals
+.bkit/
+.claude/
+.next/
+
+# Misc
+__tmp_source_me/
+.DS_Store
+docs/
