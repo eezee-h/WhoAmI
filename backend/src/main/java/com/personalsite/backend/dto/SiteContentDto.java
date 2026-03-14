@@ -1,87 +1,111 @@
 package com.personalsite.backend.dto;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 
-@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Builder
+@Jacksonized
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SiteContentDto {
-    private HomeDto home;
-    private List<HomeSectionDto> homeSections;
-    private List<ArchiveItemDto> archive;
-    private List<CardItemDto> cards;
-    private List<ContactLinkDto> contact;
+    private final HomeDto home;
+    private final List<HomeSectionDto> homeSections;
+    private final List<ArchiveItemDto> archive;
+    private final List<CardItemDto> cards;
+    private final List<ContactLinkDto> contact;
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class HomeDto {
-        private String name;
-        private String tagline;
-        private String snapshot;
-        private List<String> keywords;
-        private String avatar;
-        private Integer avatarX;
-        private Integer avatarY;
-        private String theme;
+        private final String name;
+        private final String tagline;
+        private final String snapshot;
+        private final List<String> keywords;
+        private final String avatar;
+        private final Integer avatarX;
+        private final Integer avatarY;
+        private final String theme;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class HomeSectionDto {
-        private String id;
-        private String type;
-        private String name;
+        private final String id;
+        private final String type;
+        private final String name;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class ArchiveItemDto {
-        private String id;
-        private String category;
-        private String title;
-        private String date;
-        private String desc;
-        private Boolean featured;
-        private String image;
-        private String link;
+        private final String id;
+        private final String category;
+        private final String title;
+        private final String date;
+        private final String desc;
+        private final Boolean featured;
+        private final String image;
+        private final String link;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class CardItemDto {
-        private String id;
-        private String type;
-        private String title;
-        private String date;
-        private String desc;
-        private Boolean featured;
-        private String image;
-        private List<String> links;
-        private List<DetailBlockDto> detailBlocks;
-        private List<InfoCardDto> infoCards;
-        private List<String> tags;
+        private final String id;
+        private final String type;
+        private final String title;
+        private final String date;
+        private final String desc;
+        private final Boolean featured;
+        private final String image;
+        private final List<String> links;
+        private final List<DetailBlockDto> detailBlocks;
+        private final List<InfoCardDto> infoCards;
+        private final List<String> tags;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class DetailBlockDto {
-        private String type;
-        private String content;
-        private String span;
-        private String textType;
+        private final String type;
+        private final String content;
+        private final String span;
+        private final String textType;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class InfoCardDto {
-        private String id;
-        private String icon;
-        private String label;
-        private String value;
+        private final String id;
+        private final String icon;
+        private final String label;
+        private final String value;
     }
 
-    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Builder
+    @Jacksonized
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class ContactLinkDto {
-        private String id;
-        private String type;
-        private String value;
+        private final String id;
+        private final String type;
+        private final String value;
     }
 }
