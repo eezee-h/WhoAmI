@@ -1,7 +1,14 @@
 import type { SiteContent } from './types'
 import { defaultContent } from './defaultContent'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+const API = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '')
+
+function apiUrl(path: string): string {
+  if (API.endsWith('/api')) {
+    return `${API}${path}`
+  }
+  return `${API}/api${path}`
+}
 
 const ACTIVITY_SECTION_DESCRIPTION = '동아리, 봉사, 대회, 학회 등 다양한 활동들을 기록합니다.'
 const PROJECT_SECTION_DESCRIPTION = '직접 만든 것들을 모아뒀어요.'
@@ -26,7 +33,7 @@ function normalizeContent(content: SiteContent): SiteContent {
 
 export async function apiGetContent(username: string): Promise<SiteContent> {
   try {
-    const res = await fetch(`${API}/api/${username}/content`)
+    const res = await fetch(apiUrl(`/${username}/content`))
     if (!res.ok) return normalizeContent(structuredClone(defaultContent))
     return normalizeContent(await res.json())
   } catch {
@@ -35,7 +42,7 @@ export async function apiGetContent(username: string): Promise<SiteContent> {
 }
 
 export async function apiSaveContent(username: string, password: string, content: SiteContent): Promise<void> {
-  await fetch(`${API}/api/${username}/content`, {
+  await fetch(apiUrl(`/${username}/content`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password, content }),
@@ -44,7 +51,7 @@ export async function apiSaveContent(username: string, password: string, content
 
 export async function apiUserExists(username: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API}/api/${username}/exists`)
+    const res = await fetch(apiUrl(`/${username}/exists`))
     if (!res.ok) return false
     const data = await res.json()
     return data.exists === true
@@ -57,7 +64,7 @@ export async function apiUserExists(username: string): Promise<boolean> {
 
 export async function apiLogin(loginId: string, password: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API}/api/auth/login`, {
+    const res = await fetch(apiUrl('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ loginId, password }),
@@ -76,7 +83,7 @@ export async function apiRegister(
   password: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API}/api/auth/register`, {
+    const res = await fetch(apiUrl('/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, loginId, password }),
@@ -91,7 +98,7 @@ export async function apiRegister(
 
 export async function apiVerifyAdmin(username: string, loginId: string, password: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API}/api/auth/${username}/verify`, {
+    const res = await fetch(apiUrl(`/auth/${username}/verify`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ loginId, password }),
@@ -104,7 +111,7 @@ export async function apiVerifyAdmin(username: string, loginId: string, password
 
 export async function apiGetTheme(username: string): Promise<string> {
   try {
-    const res = await fetch(`${API}/api/${username}/theme`)
+    const res = await fetch(apiUrl(`/${username}/theme`))
     if (!res.ok) return 'black'
     const data = await res.json()
     return data.theme ?? 'black'
@@ -115,7 +122,7 @@ export async function apiGetTheme(username: string): Promise<string> {
 
 export async function apiSetTheme(username: string, password: string, theme: string): Promise<void> {
   try {
-    await fetch(`${API}/api/${username}/theme`, {
+    await fetch(apiUrl(`/${username}/theme`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password, theme }),
@@ -125,7 +132,7 @@ export async function apiSetTheme(username: string, password: string, theme: str
 
 export async function apiDeleteUser(username: string, password: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API}/api/auth/${username}`, {
+    const res = await fetch(apiUrl(`/auth/${username}`), {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),

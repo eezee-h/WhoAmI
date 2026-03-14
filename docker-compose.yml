@@ -42,11 +42,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+        BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://whoami-backend:8080}
     container_name: whoami-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://whoami-backend:8080}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

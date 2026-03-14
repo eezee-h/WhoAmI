@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   if (!url) return NextResponse.json({ error: 'No URL' }, { status: 400 })
 
   try {
-    new URL(url) // validate URL
+    new URL(url)
   } catch {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
@@ -21,10 +21,11 @@ export async function GET(req: NextRequest) {
     const html = await res.text()
 
     function getOG(prop: string) {
-      const m =
-        html.match(new RegExp(`<meta[^>]*property=["']og:${prop}["'][^>]*content=["']([^"']+)["']`, 'i')) ||
+      const metaByProperty =
+        html.match(new RegExp(`<meta[^>]*property=["']og:${prop}["'][^>]*content=["']([^"']+)["']`, 'i'))
+      const metaByContent =
         html.match(new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:${prop}["']`, 'i'))
-      return m?.[1]?.trim() ?? ''
+      return metaByProperty?.[1]?.trim() ?? metaByContent?.[1]?.trim() ?? ''
     }
 
     const title =
