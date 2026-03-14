@@ -3,15 +3,34 @@ import { defaultContent } from './defaultContent'
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
 
+const ACTIVITY_SECTION_DESCRIPTION = '동아리, 봉사, 대회, 학회 등 다양한 활동들을 기록합니다.'
+const PROJECT_SECTION_DESCRIPTION = '직접 만든 것들을 모아뒀어요.'
+
+function getDefaultSectionDescription(section: SiteContent['homeSections'][number]): string {
+  if (section.type === 'activity') return ACTIVITY_SECTION_DESCRIPTION
+  if (section.type === 'project') return PROJECT_SECTION_DESCRIPTION
+  return ''
+}
+
+function normalizeContent(content: SiteContent): SiteContent {
+  return {
+    ...content,
+    homeSections: (content.homeSections ?? []).map(section => ({
+      ...section,
+      description: section.description ?? getDefaultSectionDescription(section),
+    })),
+  }
+}
+
 // ── Content ──────────────────────────────────────────────────────────────────
 
 export async function apiGetContent(username: string): Promise<SiteContent> {
   try {
     const res = await fetch(`${API}/api/${username}/content`)
-    if (!res.ok) return structuredClone(defaultContent)
-    return res.json()
+    if (!res.ok) return normalizeContent(structuredClone(defaultContent))
+    return normalizeContent(await res.json())
   } catch {
-    return structuredClone(defaultContent)
+    return normalizeContent(structuredClone(defaultContent))
   }
 }
 

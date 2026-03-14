@@ -105,13 +105,25 @@ export default function UserHomePage() {
     })
   }
 
+  function getDefaultSectionDescription(type: 'archive' | 'card', name: string) {
+    if (type === 'card') {
+      return `${name} 섹션에 대한 설명을 입력하세요.`
+    }
+    return ''
+  }
+
   function addSection(type: 'archive' | 'card', name: string) {
     const trimmed = name.trim()
     if (!trimmed) return
     setContent(prev => {
       if (!prev) return prev
       if (prev.homeSections.some(s => s.name === trimmed && s.type === type)) return prev
-      const newSection: HomeSection = { id: `${type}-${Date.now()}`, type, name: trimmed }
+      const newSection: HomeSection = {
+        id: `${type}-${Date.now()}`,
+        type,
+        name: trimmed,
+        description: getDefaultSectionDescription(type, trimmed),
+      }
       return { ...prev, homeSections: [...prev.homeSections, newSection] }
     })
   }

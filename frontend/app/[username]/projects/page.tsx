@@ -6,7 +6,10 @@ import { loadContent, saveContent } from '@/lib/content'
 import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
+import InlineEditable from '@/components/InlineEditable'
 import { useEditor } from '@/context/EditorContext'
+
+const DEFAULT_PROJECT_DESCRIPTION = '직접 만든 것들을 모아뒀어요.'
 
 export default function ProjectsPage() {
   const params = useParams()
@@ -26,11 +29,25 @@ export default function ProjectsPage() {
 
   const items = content.cards.filter(c => c.type === 'project')
   const selectedItem = items.find(i => i.id === selectedId) ?? null
+  const projectDescription =
+    content.homeSections.find(section => section.type === 'project')?.description?.trim() || DEFAULT_PROJECT_DESCRIPTION
 
   function updateItem(id: string, updates: Partial<CardItem>) {
     setContent(prev => {
       if (!prev) return prev
       return { ...prev, cards: prev.cards.map(c => c.id === id ? { ...c, ...updates } : c) }
+    })
+  }
+
+  function updateProjectDescription(description: string) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        homeSections: prev.homeSections.map(section =>
+          section.type === 'project' ? { ...section, description } : section,
+        ),
+      }
     })
   }
 
@@ -51,7 +68,11 @@ export default function ProjectsPage() {
   }
 
   function handleDrop(toIdx: number) {
-    if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOverIdx(null); return }
+    if (dragIdx === null || dragIdx === toIdx) {
+      setDragIdx(null)
+      setDragOverIdx(null)
+      return
+    }
     setContent(prev => {
       if (!prev) return prev
       const projectIds = prev.cards.filter(c => c.type === 'project').map(c => c.id)
@@ -72,7 +93,9 @@ export default function ProjectsPage() {
     <div className="container">
       <div className="section-card project-title-card">
         <h1>프로젝트</h1>
-        <p>직접 만든 것들을 모아뒀어요.</p>
+        <InlineEditable tag="p" onBlur={updateProjectDescription}>
+          {projectDescription}
+        </InlineEditable>
       </div>
 
       <div className="projects-grid">
@@ -94,7 +117,7 @@ export default function ProjectsPage() {
                 ? <img src={item.image} alt={item.title} />
                 : <span className="project-image-placeholder">🖼</span>
               }
-              {item.featured && <span className="project-featured-badge">⭐ Featured</span>}
+              {item.featured && <span className="project-featured-badge">★ Featured</span>}
             </div>
             <div className="project-body">
               <div className="project-header">

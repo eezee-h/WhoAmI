@@ -47,6 +47,7 @@ export interface HomeSection {
   id: string
   type: HomeSectionType
   name: string
+  description?: string
 }
 
 export type ContactType = 'email' | 'github' | 'instagram' | 'linkedin' | 'twitter' | 'facebook'

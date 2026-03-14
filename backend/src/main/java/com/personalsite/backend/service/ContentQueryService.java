@@ -156,6 +156,7 @@ public class ContentQueryService {
                         .id(section.getId().toString())
                         .type(section.getSectionKind())
                         .name(section.getTitle())
+                        .description(section.getDescription())
                         .build())
                 .toList();
     }

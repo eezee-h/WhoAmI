@@ -42,6 +42,7 @@ public class SiteContentDto {
         private final String id;
         private final String type;
         private final String name;
+        private final String description;
     }
 
     @Getter
