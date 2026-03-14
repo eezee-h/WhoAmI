@@ -2,12 +2,13 @@ package com.personalsite.backend.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class SiteContentDto {
     private HomeDto home;
     private List<HomeSectionDto> homeSections;
@@ -15,7 +16,7 @@ public class SiteContentDto {
     private List<CardItemDto> cards;
     private List<ContactLinkDto> contact;
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class HomeDto {
         private String name;
         private String tagline;
@@ -27,14 +28,14 @@ public class SiteContentDto {
         private String theme;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class HomeSectionDto {
         private String id;
         private String type;
         private String name;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ArchiveItemDto {
         private String id;
         private String category;
@@ -46,7 +47,7 @@ public class SiteContentDto {
         private String link;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class CardItemDto {
         private String id;
         private String type;
@@ -61,7 +62,7 @@ public class SiteContentDto {
         private List<String> tags;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DetailBlockDto {
         private String type;
         private String content;
@@ -69,7 +70,7 @@ public class SiteContentDto {
         private String textType;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class InfoCardDto {
         private String id;
         private String icon;
@@ -77,7 +78,7 @@ public class SiteContentDto {
         private String value;
     }
 
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ContactLinkDto {
         private String id;
         private String type;

@@ -17,7 +17,7 @@ public class AuthService {
 
     private final SiteUserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
-    private final ContentService contentService;
+    private final ContentCommandService contentCommandService;
 
     @Transactional
     public void register(String pageUsername, String loginId, String password) {
@@ -34,7 +34,7 @@ public class AuthService {
         user.setCreatedAt(OffsetDateTime.now());
         user.setUpdatedAt(OffsetDateTime.now());
         userRepo.save(user);
-        contentService.initDefaultContent(pageUsername);
+        contentCommandService.initDefaultContent(pageUsername);
     }
 
     public String login(String loginId, String password) {

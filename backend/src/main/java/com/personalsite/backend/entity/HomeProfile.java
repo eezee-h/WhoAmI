@@ -48,4 +48,9 @@ public class HomeProfile {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    public void changeTheme(String theme, OffsetDateTime updatedAt) {
+        this.theme = theme;
+        this.updatedAt = updatedAt;
+    }
 }
