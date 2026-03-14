@@ -24,7 +24,7 @@ export default function LinkPreviewCard({ url }: Props) {
     setError(false)
     setData(null)
 
-    fetch(`/api/og?url=${encodeURIComponent(url)}`)
+    fetch(`/meta/og?url=${encodeURIComponent(url)}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(true)
