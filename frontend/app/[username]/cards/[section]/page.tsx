@@ -6,6 +6,7 @@ import { loadContent, saveContent } from '@/lib/content'
 import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
+import InlineEditable from '@/components/InlineEditable'
 import { useEditor } from '@/context/EditorContext'
 
 export default function CustomCardSectionPage() {
@@ -27,11 +28,26 @@ export default function CustomCardSectionPage() {
 
   const items = content.cards.filter(c => c.type === sectionName)
   const selectedItem = items.find(i => i.id === selectedId) ?? null
+  const sectionDescription =
+    content.homeSections.find(section => section.type === 'card' && section.name === sectionName)?.description?.trim()
+    || `${sectionName} 섹션에 대한 설명을 입력하세요.`
 
   function updateItem(id: string, updates: Partial<CardItem>) {
     setContent(prev => {
       if (!prev) return prev
       return { ...prev, cards: prev.cards.map(c => c.id === id ? { ...c, ...updates } : c) }
+    })
+  }
+
+  function updateSectionDescription(description: string) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        homeSections: prev.homeSections.map(section =>
+          section.type === 'card' && section.name === sectionName ? { ...section, description } : section,
+        ),
+      }
     })
   }
 
@@ -52,7 +68,11 @@ export default function CustomCardSectionPage() {
   }
 
   function handleDrop(toIdx: number) {
-    if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOverIdx(null); return }
+    if (dragIdx === null || dragIdx === toIdx) {
+      setDragIdx(null)
+      setDragOverIdx(null)
+      return
+    }
     setContent(prev => {
       if (!prev) return prev
       const sectionIds = prev.cards.filter(c => c.type === sectionName).map(c => c.id)
@@ -73,6 +93,9 @@ export default function CustomCardSectionPage() {
     <div className="container">
       <div className="section-card project-title-card">
         <h1>{sectionName}</h1>
+        <InlineEditable tag="p" onBlur={updateSectionDescription}>
+          {sectionDescription}
+        </InlineEditable>
       </div>
 
       <div className="projects-grid">
@@ -92,9 +115,9 @@ export default function CustomCardSectionPage() {
             <div className="project-image">
               {item.image
                 ? <img src={item.image} alt={item.title} />
-                : <span className="project-image-placeholder">📌</span>
+                : <span className="project-image-placeholder">🧩</span>
               }
-              {item.featured && <span className="project-featured-badge">⭐ Featured</span>}
+              {item.featured && <span className="project-featured-badge">★ Featured</span>}
             </div>
             <div className="project-body">
               <div className="project-header">

@@ -29,6 +29,7 @@ create table if not exists home_section (
         references site_user(page_username) on delete cascade,
     section_kind varchar(30) not null,
     title varchar(100) not null,
+    description text,
     sort_order integer not null default 0,
     is_visible boolean not null default true,
     created_at timestamptz not null default now(),

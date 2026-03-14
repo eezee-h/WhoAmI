@@ -187,6 +187,7 @@ public class ContentCommandService {
             section.setPageUsername(canonicalUsername);
             section.setSectionKind(sectionDto.getType());
             section.setTitle(sectionDto.getName());
+            section.setDescription(sectionDto.getDescription());
             section.setSortOrder(sectionIndex);
             section.setIsVisible(true);
             section.setCreatedAt(now);

@@ -6,7 +6,10 @@ import { loadContent, saveContent } from '@/lib/content'
 import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
+import InlineEditable from '@/components/InlineEditable'
 import { useEditor } from '@/context/EditorContext'
+
+const DEFAULT_ACTIVITY_DESCRIPTION = '동아리, 봉사, 대회, 학회 등 다양한 활동들을 기록합니다.'
 
 export default function ActivitiesPage() {
   const params = useParams()
@@ -26,11 +29,25 @@ export default function ActivitiesPage() {
 
   const items = content.cards.filter(c => c.type === 'activity')
   const selectedItem = items.find(i => i.id === selectedId) ?? null
+  const activityDescription =
+    content.homeSections.find(section => section.type === 'activity')?.description?.trim() || DEFAULT_ACTIVITY_DESCRIPTION
 
   function updateItem(id: string, updates: Partial<CardItem>) {
     setContent(prev => {
       if (!prev) return prev
       return { ...prev, cards: prev.cards.map(c => c.id === id ? { ...c, ...updates } : c) }
+    })
+  }
+
+  function updateActivityDescription(description: string) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        homeSections: prev.homeSections.map(section =>
+          section.type === 'activity' ? { ...section, description } : section,
+        ),
+      }
     })
   }
 
@@ -51,7 +68,11 @@ export default function ActivitiesPage() {
   }
 
   function handleDrop(toIdx: number) {
-    if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOverIdx(null); return }
+    if (dragIdx === null || dragIdx === toIdx) {
+      setDragIdx(null)
+      setDragOverIdx(null)
+      return
+    }
     setContent(prev => {
       if (!prev) return prev
       const activityIds = prev.cards.filter(c => c.type === 'activity').map(c => c.id)
@@ -72,7 +93,9 @@ export default function ActivitiesPage() {
     <div className="container">
       <div className="section-card archive-title">
         <h1>대외활동</h1>
-        <p>동아리, 봉사, 대회, 학회 등 다양한 활동들을 기록합니다.</p>
+        <InlineEditable tag="p" onBlur={updateActivityDescription}>
+          {activityDescription}
+        </InlineEditable>
       </div>
 
       <div className="projects-grid">
@@ -92,9 +115,9 @@ export default function ActivitiesPage() {
             <div className="project-image">
               {item.image
                 ? <img src={item.image} alt={item.title} />
-                : <span className="project-image-placeholder">🎯</span>
+                : <span className="project-image-placeholder">📁</span>
               }
-              {item.featured && <span className="project-featured-badge">⭐ Featured</span>}
+              {item.featured && <span className="project-featured-badge">★ Featured</span>}
             </div>
             <div className="project-body">
               <div className="project-header">

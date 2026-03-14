@@ -28,6 +28,9 @@ public class HomeSection {
     @Column(name = "title", nullable = false, length = 100)
     private String title;
 
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 
