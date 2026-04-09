@@ -2,6 +2,8 @@
 
 import { useEditor } from '@/context/EditorContext'
 import { ElementType, useRef } from 'react'
+import RichText from './RichText'
+import { isBoldShortcut, wrapContentEditableSelectionWithBold } from '@/lib/richText'
 
 interface Props {
   tag?: ElementType
@@ -25,6 +27,18 @@ export default function InlineEditable({
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLElement>) {
+    if (!isAdmin || !ref.current) return
+    if (!isBoldShortcut(e.key, e.metaKey, e.ctrlKey)) return
+
+    e.preventDefault()
+    wrapContentEditableSelectionWithBold(ref.current)
+  }
+
+  if (!isAdmin) {
+    return <RichText as={Tag} className={className} text={children} />
+  }
+
   return (
     <Tag
       ref={ref as React.RefObject<HTMLElement & HTMLParagraphElement & HTMLHeadingElement>}
@@ -32,6 +46,7 @@ export default function InlineEditable({
       contentEditable={isAdmin}
       suppressContentEditableWarning
       onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
       data-editable={isAdmin ? 'true' : undefined}
     >
       {children}

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import type { DetailBlock } from '@/lib/types'
 import { resizeImageToBase64 } from '@/lib/imageUtils'
+import RichText from './RichText'
+import { isBoldShortcut, wrapTextSelectionWithBold } from '@/lib/richText'
 
 interface Props {
   blocks: DetailBlock[]
@@ -75,6 +77,18 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     update(local.map((b, i) => i === idx ? { ...b, content } : b))
   }
 
+  function handleTextBoldShortcut(e: React.KeyboardEvent<HTMLTextAreaElement>, idx: number) {
+    if (!isBoldShortcut(e.key, e.metaKey, e.ctrlKey)) return
+
+    e.preventDefault()
+    const target = e.currentTarget
+    const { nextValue, nextSelectionStart, nextSelectionEnd } =
+      wrapTextSelectionWithBold(target.value, target.selectionStart, target.selectionEnd)
+
+    updateText(idx, nextValue)
+    requestAnimationFrame(() => target.setSelectionRange(nextSelectionStart, nextSelectionEnd))
+  }
+
   function toggleSpan(idx: number) {
     update(local.map((b, i) => i === idx ? { ...b, span: b.span === 'half' ? 'full' : 'half' } : b))
   }
@@ -108,8 +122,8 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
           }
           if (!block.content) return null
           return block.textType === 'heading'
-            ? <h3 key={i} className={`proj-modal-detail-heading${block.span !== 'half' ? ' detail-block-view-full' : ''}`}>{block.content}</h3>
-            : <p key={i} className={`proj-modal-detail-text${block.span !== 'half' ? ' detail-block-view-full' : ''}`}>{block.content}</p>
+            ? <RichText key={i} as="h3" className={`proj-modal-detail-heading${block.span !== 'half' ? ' detail-block-view-full' : ''}`} text={block.content} />
+            : <RichText key={i} as="p" className={`proj-modal-detail-text${block.span !== 'half' ? ' detail-block-view-full' : ''}`} text={block.content} />
         })}
       </div>
     )
@@ -160,6 +174,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
                 placeholder="텍스트를 입력하세요..."
                 rows={4}
                 onMouseDown={e => e.stopPropagation()}
+                onKeyDown={e => handleTextBoldShortcut(e, idx)}
               />
             ) : block.type === 'embed' ? (
               <div className="detail-block-embed-edit" onMouseDown={e => e.stopPropagation()}>

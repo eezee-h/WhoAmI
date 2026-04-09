@@ -6,7 +6,9 @@ import { resizeImageToBase64 } from '@/lib/imageUtils'
 import InlineEditable from './InlineEditable'
 import DetailBlockEditor from './DetailBlockEditor'
 import LinkPreviewCard from './LinkPreviewCard'
+import RichText from './RichText'
 import { useEditor } from '@/context/EditorContext'
+import { isBoldShortcut, wrapTextSelectionWithBold } from '@/lib/richText'
 
 interface Props {
   item: CardItem
@@ -15,6 +17,25 @@ interface Props {
 }
 
 const PRESET_ICONS = ['🏢', '💼', '📋', '👥', '⚙️', '📝', '🔗', '🎯', '📌', '🌟', '🖥️', '📊', '🏆', '🎓', '📅', '💡', '🚀', '👨‍💻', '🌐', '📱', '✉️', '📍', '🤝', '💰', '🔧', '📚', '🎨', '🏅']
+const TAG_SPLIT_RE = /[,\n]/
+
+function mergeTags(currentTags: string[], rawInput: string) {
+  const nextTags = [...currentTags]
+  const seen = new Set(currentTags.map(tag => tag.toLowerCase()))
+
+  rawInput
+    .split(TAG_SPLIT_RE)
+    .map(tag => tag.trim())
+    .filter(Boolean)
+    .forEach(tag => {
+      const normalized = tag.toLowerCase()
+      if (seen.has(normalized)) return
+      seen.add(normalized)
+      nextTags.push(tag)
+    })
+
+  return nextTags
+}
 
 export default function CardModal({ item, onClose, onUpdate }: Props) {
   const { isAdmin } = useEditor()
@@ -62,14 +83,29 @@ export default function CardModal({ item, onClose, onUpdate }: Props) {
   }
 
   function addTag() {
-    const v = newTag.trim()
-    if (!v) return
-    onUpdate(item.id, { tags: [...tags, v] })
+    const nextTags = mergeTags(tags, newTag)
+    if (nextTags.length === tags.length) {
+      setNewTag('')
+      return
+    }
+    onUpdate(item.id, { tags: nextTags })
     setNewTag('')
   }
 
   function removeTag(i: number) {
     onUpdate(item.id, { tags: tags.filter((_, idx) => idx !== i) })
+  }
+
+  function handleInfoCardBoldShortcut(e: React.KeyboardEvent<HTMLTextAreaElement>, idx: number) {
+    if (!isBoldShortcut(e.key, e.metaKey, e.ctrlKey)) return
+
+    e.preventDefault()
+    const target = e.currentTarget
+    const { nextValue, nextSelectionStart, nextSelectionEnd } =
+      wrapTextSelectionWithBold(target.value, target.selectionStart, target.selectionEnd)
+
+    updateInfoCard(idx, 'value', nextValue)
+    requestAnimationFrame(() => target.setSelectionRange(nextSelectionStart, nextSelectionEnd))
   }
 
   return (
@@ -164,62 +200,66 @@ export default function CardModal({ item, onClose, onUpdate }: Props) {
                 {(() => {
                   const colorClasses = ['proj-modal-info-team', 'proj-modal-info-role', 'proj-modal-info-service']
                   return infoCards.map((card, idx) => {
-                  const lines = card.value.split('\n').filter(Boolean)
-                  const colorClass = colorClasses[idx % colorClasses.length]
-                  return (
-                    <div key={card.id} className={`proj-modal-info-card ${colorClass}`}>
-                      {isAdmin ? (
-                        <div className="info-card-edit">
-                          <div className="info-card-edit-header">
-                            <div style={{ position: 'relative' }}>
-                              <button
-                                className="info-card-icon-btn"
-                                onClick={() => setIconPickerIdx(iconPickerIdx === idx ? null : idx)}
+                    const lines = card.value.split('\n').filter(Boolean)
+                    const colorClass = colorClasses[idx % colorClasses.length]
+                    return (
+                      <div key={card.id} className={`proj-modal-info-card ${colorClass}`}>
+                        {isAdmin ? (
+                          <div className="info-card-edit">
+                            <div className="info-card-edit-header">
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  className="info-card-icon-btn"
+                                  onClick={() => setIconPickerIdx(iconPickerIdx === idx ? null : idx)}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  title="아이콘 선택"
+                                >{card.icon}</button>
+                                {iconPickerIdx === idx && (
+                                  <div className="icon-picker-popup" onMouseDown={e => e.stopPropagation()}>
+                                    {PRESET_ICONS.map(em => (
+                                      <button
+                                        key={em}
+                                        className="icon-picker-item"
+                                        onClick={() => { updateInfoCard(idx, 'icon', em); setIconPickerIdx(null) }}
+                                      >
+                                        {em}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <input
+                                className="info-card-label-input"
+                                value={card.label}
+                                onChange={e => updateInfoCard(idx, 'label', e.target.value)}
                                 onMouseDown={e => e.stopPropagation()}
-                                title="아이콘 선택"
-                              >{card.icon}</button>
-                              {iconPickerIdx === idx && (
-                                <div className="icon-picker-popup" onMouseDown={e => e.stopPropagation()}>
-                                  {PRESET_ICONS.map(em => (
-                                    <button key={em} className="icon-picker-item"
-                                      onClick={() => { updateInfoCard(idx, 'icon', em); setIconPickerIdx(null) }}>
-                                      {em}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
+                              />
+                              <button className="info-card-delete" onClick={() => removeInfoCard(idx)}>×</button>
                             </div>
-                            <input
-                              className="info-card-label-input"
-                              value={card.label}
-                              onChange={e => updateInfoCard(idx, 'label', e.target.value)}
+                            <textarea
+                              className="info-card-value-textarea"
+                              value={card.value}
+                              onChange={e => updateInfoCard(idx, 'value', e.target.value)}
+                              placeholder="내용 입력..."
+                              rows={3}
                               onMouseDown={e => e.stopPropagation()}
+                              onKeyDown={e => handleInfoCardBoldShortcut(e, idx)}
                             />
-                            <button className="info-card-delete" onClick={() => removeInfoCard(idx)}>×</button>
                           </div>
-                          <textarea
-                            className="info-card-value-textarea"
-                            value={card.value}
-                            onChange={e => updateInfoCard(idx, 'value', e.target.value)}
-                            placeholder="내용 입력..."
-                            rows={3}
-                            onMouseDown={e => e.stopPropagation()}
-                          />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="proj-modal-info-icon">{card.icon}</div>
-                          <p className="proj-modal-info-label">{card.label}</p>
-                          {lines.length > 0
-                            ? lines.map((line, i) => <p key={i} className="proj-modal-info-value">{line}</p>)
-                            : <p className="proj-modal-info-value" style={{ opacity: 0.4 }}>—</p>
-                          }
-                        </>
-                      )}
-                    </div>
-                  )
-                })
-              })()}
+                        ) : (
+                          <>
+                            <div className="proj-modal-info-icon">{card.icon}</div>
+                            <p className="proj-modal-info-label">{card.label}</p>
+                            {lines.length > 0
+                              ? lines.map((line, i) => <RichText key={i} as="p" className="proj-modal-info-value" text={line} />)
+                              : <p className="proj-modal-info-value" style={{ opacity: 0.4 }}>—</p>
+                            }
+                          </>
+                        )}
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             )}
             {isAdmin && (
@@ -244,7 +284,7 @@ export default function CardModal({ item, onClose, onUpdate }: Props) {
                         ref={newTagRef}
                         type="text"
                         className="proj-modal-tag-input"
-                        placeholder="태그 추가"
+                        placeholder="태그 추가 (쉼표 구분)"
                         value={newTag}
                         onChange={e => setNewTag(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
@@ -253,6 +293,7 @@ export default function CardModal({ item, onClose, onUpdate }: Props) {
                     </div>
                   )}
                 </div>
+                {isAdmin && <p className="proj-modal-tag-help">쉼표로 여러 태그를 한 번에 추가할 수 있습니다. 제한은 없습니다.</p>}
               </div>
             )}
 

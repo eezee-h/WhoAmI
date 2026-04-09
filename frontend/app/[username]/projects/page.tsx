@@ -7,6 +7,7 @@ import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
 import InlineEditable from '@/components/InlineEditable'
+import RichText from '@/components/RichText'
 import { useEditor } from '@/context/EditorContext'
 
 const DEFAULT_PROJECT_DESCRIPTION = '직접 만든 것들을 모아뒀어요.'
@@ -58,6 +59,7 @@ export default function ProjectsPage() {
       title: '프로젝트 이름',
       date: '2026.01 ~ 2026.03',
       desc: '프로젝트 설명을 입력하세요.',
+      tags: [],
     }
     setContent(prev => prev ? { ...prev, cards: [newItem, ...prev.cards] } : prev)
   }
@@ -121,10 +123,10 @@ export default function ProjectsPage() {
             </div>
             <div className="project-body">
               <div className="project-header">
-                <h3 className="project-name">{item.title}</h3>
-                <span className="project-date">{item.date}</span>
+                <RichText as="h3" className="project-name" text={item.title} />
+                <RichText as="span" className="project-date" text={item.date} />
               </div>
-              <p className="project-desc">{item.desc}</p>
+              <RichText as="p" className="project-desc" text={item.desc} />
               <div className="project-tags">
                 {(item.tags ?? []).map((tag, i) => <span key={i} className="tag">{tag}</span>)}
               </div>
