@@ -10,6 +10,7 @@
 - 프로필 편집: 이름, 소개 문구, 키워드, 이미지
 - 아카이브 섹션 관리: 경력, 학력, 수상 등
 - 활동 / 프로젝트 카드 관리
+- 텍스트 굵게 표시 지원: `**텍스트**`, `Cmd/Ctrl+B`
 - 커스텀 카드 섹션 추가 및 관리
 - 연락처 / 테마 관리
 - Docker Compose 기반 전체 스택 실행
@@ -135,6 +136,12 @@ BACKEND_INTERNAL_URL=http://whoami-backend:8080
 - `/{username}/contact`
 - `/{username}/settings`
 
+## 작성 팁
+
+- 일반 텍스트 입력 영역에서는 `**텍스트**` 형식으로 굵게 표시할 수 있습니다.
+- 편집 중 텍스트를 선택한 뒤 `Cmd+B` 또는 `Ctrl+B`를 눌러도 굵게 표시할 수 있습니다.
+- 굵게 표시는 소개 문구, 프로젝트/대외활동 설명, 커스텀 카드 설명, 상세 내용 텍스트 블록 등에 적용됩니다.
+
 ## 주요 API
 
 ### 인증
@@ -213,6 +220,42 @@ DB 볼륨을 지우면 저장된 사용자와 콘텐츠도 함께 삭제됩니�
 ```bash
 docker compose down -v
 docker compose up -d --build
+```
+
+## 커밋 메시지 규칙
+
+이 저장소에서는 보통 `Conventional Commits` 스타일을 쓰면 깔끔합니다.
+
+형식:
+
+```text
+type: short summary
+```
+
+자주 쓰는 타입:
+
+- `feat`: 새로운 기능 추가
+- `fix`: 버그 수정
+- `docs`: 문서 수정
+- `refactor`: 동작 변화 없는 구조 개선
+- `style`: 코드 포맷, 공백, 세미콜론 등 비기능 수정
+- `test`: 테스트 추가/수정
+- `chore`: 빌드, 설정, 의존성 같은 잡무성 변경
+
+예시:
+
+```text
+feat: support bold text formatting in editor
+fix: preserve project tags when editing cards
+docs: update README with commit guidelines
+```
+
+영어를 길게 쓸 필요는 없습니다. `type`만 영어로 맞추고 뒤 설명은 짧고 명확하면 됩니다.
+
+```text
+feat: 프로젝트 설명 볼드 지원
+fix: 태그 저장 동작 수정
+docs: 리드미 실행 방법 정리
 ```
 
 ## 요약

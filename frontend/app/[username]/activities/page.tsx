@@ -7,6 +7,7 @@ import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
 import InlineEditable from '@/components/InlineEditable'
+import RichText from '@/components/RichText'
 import { useEditor } from '@/context/EditorContext'
 
 const DEFAULT_ACTIVITY_DESCRIPTION = '동아리, 봉사, 대회, 학회 등 다양한 활동들을 기록합니다.'
@@ -58,6 +59,7 @@ export default function ActivitiesPage() {
       title: '대외활동 이름',
       date: '2026',
       desc: '활동 내용과 역할을 입력하세요.',
+      tags: [],
     }
     setContent(prev => prev ? { ...prev, cards: [newItem, ...prev.cards] } : prev)
   }
@@ -121,10 +123,10 @@ export default function ActivitiesPage() {
             </div>
             <div className="project-body">
               <div className="project-header">
-                <h3 className="project-name">{item.title}</h3>
-                <span className="project-date">{item.date}</span>
+                <RichText as="h3" className="project-name" text={item.title} />
+                <RichText as="span" className="project-date" text={item.date} />
               </div>
-              <p className="project-desc">{item.desc}</p>
+              <RichText as="p" className="project-desc" text={item.desc} />
               {isAdmin && (
                 <button className="btn-remove-project" onClick={e => { e.stopPropagation(); removeItem(item.id) }}>
                   삭제

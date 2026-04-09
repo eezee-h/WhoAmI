@@ -7,6 +7,7 @@ import type { SiteContent, CardItem } from '@/lib/types'
 import SaveButton from '@/components/SaveButton'
 import CardModal from '@/components/CardModal'
 import InlineEditable from '@/components/InlineEditable'
+import RichText from '@/components/RichText'
 import { useEditor } from '@/context/EditorContext'
 
 export default function CustomCardSectionPage() {
@@ -121,10 +122,10 @@ export default function CustomCardSectionPage() {
             </div>
             <div className="project-body">
               <div className="project-header">
-                <h3 className="project-name">{item.title}</h3>
-                <span className="project-date">{item.date}</span>
+                <RichText as="h3" className="project-name" text={item.title} />
+                <RichText as="span" className="project-date" text={item.date} />
               </div>
-              <p className="project-desc">{item.desc}</p>
+              <RichText as="p" className="project-desc" text={item.desc} />
               {(item.tags ?? []).length > 0 && (
                 <div className="project-tags">
                   {(item.tags ?? []).map((tag, i) => <span key={i} className="tag">{tag}</span>)}

@@ -7,6 +7,7 @@ import { loadContent, saveContent } from '@/lib/content'
 import type { SiteContent, ArchiveItem, CardItem, HomeSection } from '@/lib/types'
 import { resizeImageToBase64 } from '@/lib/imageUtils'
 import InlineEditable from '@/components/InlineEditable'
+import RichText from '@/components/RichText'
 import SaveButton from '@/components/SaveButton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useEditor } from '@/context/EditorContext'
@@ -235,13 +236,13 @@ export default function UserHomePage() {
         {[...activities].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)).map(item => (
           <div key={item.id} className="resume-item">
             <div className="resume-item-header">
-              <span className="resume-item-title">{item.title}</span>
+              <RichText as="span" className="resume-item-title" text={item.title} />
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="resume-item-date">{item.date}</span>
+                <RichText as="span" className="resume-item-date" text={item.date} />
                 {isAdmin && <button className="btn-remove-project" onClick={() => removeCard(item.id)}>삭제</button>}
               </div>
             </div>
-            <p className="resume-item-desc">{item.desc}</p>
+            <RichText as="p" className="resume-item-desc" text={item.desc} />
           </div>
         ))}
       </section>
@@ -262,13 +263,13 @@ export default function UserHomePage() {
         {[...projects].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)).map(project => (
           <div key={project.id} className="resume-item">
             <div className="resume-item-header">
-              <span className="resume-item-title">{project.title}</span>
+              <RichText as="span" className="resume-item-title" text={project.title} />
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="resume-item-date">{project.date}</span>
+                <RichText as="span" className="resume-item-date" text={project.date} />
                 {isAdmin && <button className="btn-remove-project" onClick={() => removeCard(project.id)}>삭제</button>}
               </div>
             </div>
-            <p className="resume-item-desc">{project.desc}</p>
+            <RichText as="p" className="resume-item-desc" text={project.desc} />
             {(project.tags ?? []).length > 0 && (
               <div className="project-tags" style={{ marginTop: '0.5rem' }}>
                 {(project.tags ?? []).map((tag, i) => <span key={i} className="tag">{tag}</span>)}
@@ -295,13 +296,13 @@ export default function UserHomePage() {
         {[...sectionCards].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)).map(item => (
           <div key={item.id} className="resume-item">
             <div className="resume-item-header">
-              <span className="resume-item-title">{item.title}</span>
+              <RichText as="span" className="resume-item-title" text={item.title} />
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="resume-item-date">{item.date}</span>
+                <RichText as="span" className="resume-item-date" text={item.date} />
                 {isAdmin && <button className="btn-remove-project" onClick={() => removeCard(item.id)}>삭제</button>}
               </div>
             </div>
-            <p className="resume-item-desc">{item.desc}</p>
+            <RichText as="p" className="resume-item-desc" text={item.desc} />
           </div>
         ))}
       </section>
