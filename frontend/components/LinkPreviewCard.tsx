@@ -17,12 +17,14 @@ export default function LinkPreviewCard({ url }: Props) {
   const [data, setData] = useState<OGData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [hideImage, setHideImage] = useState(false)
 
   useEffect(() => {
     if (!url) return
     setLoading(true)
     setError(false)
     setData(null)
+    setHideImage(false)
 
     fetch(`/meta/og?url=${encodeURIComponent(url)}`)
       .then(r => r.json())
@@ -59,11 +61,16 @@ export default function LinkPreviewCard({ url }: Props) {
       rel="noopener noreferrer"
       className="link-preview-card"
     >
-      {data.image && (
-        <div className="link-preview-image-wrap">
-          <img src={data.image} alt={data.title} className="link-preview-image" />
-        </div>
-      )}
+      <div className="link-preview-image-wrap">
+        {data.image && !hideImage && (
+          <img
+            src={data.image}
+            alt={data.title}
+            className="link-preview-image"
+            onError={() => setHideImage(true)}
+          />
+        )}
+      </div>
       <div className="link-preview-content">
         {data.title && <p className="link-preview-title">{data.title}</p>}
         {data.description && <p className="link-preview-desc">{data.description}</p>}
