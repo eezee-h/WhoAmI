@@ -57,7 +57,9 @@ public class SiteContentDto {
         private final String desc;
         private final Boolean featured;
         private final String image;
+        private final String linkMode;
         private final String link;
+        private final List<String> embedLinks;
     }
 
     @Getter

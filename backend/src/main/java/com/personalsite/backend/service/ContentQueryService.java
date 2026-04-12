@@ -162,6 +162,9 @@ public class ContentQueryService {
     }
 
     private ArchiveItemDto toArchiveItemDto(HomeSection section, ArchiveItem item) {
+        List<String> embedLinks = sanitizeLinks(item.getEmbedLinks() != null ? Arrays.asList(item.getEmbedLinks()) : List.of());
+        String linkMode = resolveArchiveLinkMode(item.getLinkMode(), embedLinks);
+
         return ArchiveItemDto.builder()
                 .id(item.getId().toString())
                 .category(section.getTitle())
@@ -170,7 +173,9 @@ public class ContentQueryService {
                 .desc(item.getSummary())
                 .featured(item.getFeatured())
                 .image(item.getImageBase64())
-                .link(item.getLinkUrl())
+                .linkMode(linkMode)
+                .link("link".equals(linkMode) ? item.getLinkUrl() : null)
+                .embedLinks("embed".equals(linkMode) ? embedLinks : List.of())
                 .build();
     }
 
@@ -243,6 +248,24 @@ public class ContentQueryService {
                         .label(getString(item, "label"))
                         .value(getString(item, "value"))
                         .build())
+                .toList();
+    }
+
+    private String resolveArchiveLinkMode(String linkMode, List<String> embedLinks) {
+        if ("embed".equals(linkMode) || !embedLinks.isEmpty()) {
+            return "embed";
+        }
+        return "link";
+    }
+
+    private List<String> sanitizeLinks(List<String> links) {
+        if (links == null) {
+            return List.of();
+        }
+
+        return links.stream()
+                .filter(link -> link != null && !link.isBlank())
+                .map(String::trim)
                 .toList();
     }
 }

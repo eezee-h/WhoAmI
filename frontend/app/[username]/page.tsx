@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { loadContent, saveContent } from '@/lib/content'
-import type { SiteContent, ArchiveItem, CardItem, HomeSection } from '@/lib/types'
+import type { SiteContent, ArchiveItem, ArchiveLinkMode, CardItem, HomeSection } from '@/lib/types'
 import { resizeImageToBase64 } from '@/lib/imageUtils'
 import InlineEditable from '@/components/InlineEditable'
 import RichText from '@/components/RichText'
+import LinkPreviewCard from '@/components/LinkPreviewCard'
 import SaveButton from '@/components/SaveButton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useEditor } from '@/context/EditorContext'
@@ -71,10 +72,80 @@ export default function UserHomePage() {
     setContent(prev => prev ? { ...prev, home: { ...prev.home, [key]: value } } : prev)
   }
 
-  function updateArchive(id: string, key: 'title' | 'date' | 'desc' | 'link', value: string) {
+  function updateArchiveItem(id: string, updates: Partial<ArchiveItem>) {
     setContent(prev => {
       if (!prev) return prev
-      return { ...prev, archive: prev.archive.map(item => item.id === id ? { ...item, [key]: value } : item) }
+      return {
+        ...prev,
+        archive: prev.archive.map(item => item.id === id ? { ...item, ...updates } : item),
+      }
+    })
+  }
+
+  function updateArchive(id: string, key: 'title' | 'date' | 'desc' | 'link', value: string) {
+    updateArchiveItem(id, { [key]: value } as Partial<ArchiveItem>)
+  }
+
+  function getArchiveLinkMode(item: ArchiveItem): ArchiveLinkMode {
+    return item.linkMode === 'embed' ? 'embed' : 'link'
+  }
+
+  function updateArchiveLinkMode(id: string, linkMode: ArchiveLinkMode) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        archive: prev.archive.map(item => {
+          if (item.id !== id) return item
+          if (linkMode === 'embed' && (item.embedLinks ?? []).length === 0) {
+            return { ...item, linkMode, embedLinks: [''] }
+          }
+          return { ...item, linkMode }
+        }),
+      }
+    })
+  }
+
+  function updateArchiveEmbedLink(id: string, embedIdx: number, value: string) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        archive: prev.archive.map(item => {
+          if (item.id !== id) return item
+          const embedLinks = [...(item.embedLinks ?? [])]
+          embedLinks[embedIdx] = value
+          return { ...item, embedLinks }
+        }),
+      }
+    })
+  }
+
+  function addArchiveEmbedLink(id: string) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        archive: prev.archive.map(item =>
+          item.id === id ? { ...item, embedLinks: [...(item.embedLinks ?? []), ''] } : item
+        ),
+      }
+    })
+  }
+
+  function removeArchiveEmbedLink(id: string, embedIdx: number) {
+    setContent(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        archive: prev.archive.map(item => {
+          if (item.id !== id) return item
+          return {
+            ...item,
+            embedLinks: (item.embedLinks ?? []).filter((_, idx) => idx !== embedIdx),
+          }
+        }),
+      }
     })
   }
 
@@ -82,6 +153,7 @@ export default function UserHomePage() {
     const newItem: ArchiveItem = {
       id: String(Date.now()), category,
       title: '제목을 입력하세요', date: '2026', desc: '설명을 입력하세요.',
+      linkMode: 'link', embedLinks: [],
     }
     setContent(prev => prev ? { ...prev, archive: [newItem, ...prev.archive] } : prev)
   }
@@ -173,6 +245,11 @@ export default function UserHomePage() {
     return cls
   }
 
+  function shouldHandleArchiveItemClick(target: EventTarget | null) {
+    if (!(target instanceof HTMLElement)) return true
+    return !target.closest('a, button, input, textarea, [contenteditable="true"]')
+  }
+
   function renderArchiveSection(sec: HomeSection, idx: number) {
     const items = archive.filter(i => i.category === sec.name)
     return (
@@ -183,39 +260,133 @@ export default function UserHomePage() {
         </div>
         {items.length === 0 && !isAdmin && <p className="resume-empty">아직 내용이 없습니다.</p>}
         {items.map((item, itemIdx) => (
-          <div
-            key={item.id}
-            className={`resume-item${dragOverItemInfo?.category === sec.name && dragOverItemInfo?.idx === itemIdx && dragItemInfo?.idx !== itemIdx ? ' resume-item-drag-over' : ''}${dragItemInfo?.category === sec.name && dragItemInfo?.idx === itemIdx ? ' resume-item-dragging' : ''}`}
-            draggable={isAdmin}
-            onDragStart={e => { e.stopPropagation(); setDragItemInfo({ category: sec.name, idx: itemIdx }) }}
-            onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOverItemInfo({ category: sec.name, idx: itemIdx }) }}
-            onDragLeave={e => { e.stopPropagation(); setDragOverItemInfo(null) }}
-            onDrop={e => {
-              e.stopPropagation()
-              if (dragItemInfo?.category === sec.name && dragItemInfo.idx !== itemIdx) reorderArchiveItems(sec.name, dragItemInfo.idx, itemIdx)
-              setDragItemInfo(null); setDragOverItemInfo(null)
-            }}
-            onDragEnd={e => { e.stopPropagation(); setDragItemInfo(null); setDragOverItemInfo(null) }}
-            onClick={() => { if (!isAdmin && item.link && !window.getSelection()?.toString()) window.open(item.link, '_blank', 'noopener,noreferrer') }}
-            style={isAdmin ? { cursor: 'grab' } : item.link ? { cursor: 'pointer' } : undefined}
-          >
-            <div className="resume-item-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <InlineEditable tag="span" className="resume-item-title" onBlur={v => updateArchive(item.id, 'title', v)}>{item.title}</InlineEditable>
-                {item.link && !isAdmin && <span className="resume-item-link-icon">🔗</span>}
+          (() => {
+            const itemLink = item.link?.trim()
+            const linkMode = getArchiveLinkMode(item)
+            const rawEmbedLinks = item.embedLinks ?? []
+            const embedLinks = rawEmbedLinks.map(url => url.trim()).filter(Boolean)
+            const hasClickLink = linkMode === 'link' && !!itemLink
+            return (
+              <div
+                key={item.id}
+                className={`resume-item${dragOverItemInfo?.category === sec.name && dragOverItemInfo?.idx === itemIdx && dragItemInfo?.idx !== itemIdx ? ' resume-item-drag-over' : ''}${dragItemInfo?.category === sec.name && dragItemInfo?.idx === itemIdx ? ' resume-item-dragging' : ''}`}
+                draggable={isAdmin}
+                onDragStart={e => { e.stopPropagation(); setDragItemInfo({ category: sec.name, idx: itemIdx }) }}
+                onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOverItemInfo({ category: sec.name, idx: itemIdx }) }}
+                onDragLeave={e => { e.stopPropagation(); setDragOverItemInfo(null) }}
+                onDrop={e => {
+                  e.stopPropagation()
+                  if (dragItemInfo?.category === sec.name && dragItemInfo.idx !== itemIdx) reorderArchiveItems(sec.name, dragItemInfo.idx, itemIdx)
+                  setDragItemInfo(null); setDragOverItemInfo(null)
+                }}
+                onDragEnd={e => { e.stopPropagation(); setDragItemInfo(null); setDragOverItemInfo(null) }}
+                onClick={e => {
+                  if (isAdmin || !hasClickLink || window.getSelection()?.toString()) return
+                  if (!shouldHandleArchiveItemClick(e.target)) return
+                  window.open(itemLink, '_blank', 'noopener,noreferrer')
+                }}
+                style={isAdmin ? { cursor: 'grab' } : hasClickLink ? { cursor: 'pointer' } : undefined}
+              >
+                <div className="resume-item-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <InlineEditable tag="span" className="resume-item-title" onBlur={v => updateArchive(item.id, 'title', v)}>{item.title}</InlineEditable>
+                    {hasClickLink && !isAdmin && <span className="resume-item-link-icon">🔗</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <InlineEditable tag="span" className="resume-item-date" onBlur={v => updateArchive(item.id, 'date', v)}>{item.date}</InlineEditable>
+                    {isAdmin && <button className="btn-remove-project" onClick={() => removeArchiveItem(item.id)}>삭제</button>}
+                  </div>
+                </div>
+                <InlineEditable tag="p" className="resume-item-desc" onBlur={v => updateArchive(item.id, 'desc', v)}>{item.desc}</InlineEditable>
+                {isAdmin && (
+                  <div
+                    className="resume-item-connection-editor"
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="resume-item-connection-toggle">
+                      <button
+                        type="button"
+                        className={`resume-item-connection-btn${linkMode === 'link' ? ' active' : ''}`}
+                        onClick={() => updateArchiveLinkMode(item.id, 'link')}
+                      >
+                        링크
+                      </button>
+                      <button
+                        type="button"
+                        className={`resume-item-connection-btn${linkMode === 'embed' ? ' active' : ''}`}
+                        onClick={() => updateArchiveLinkMode(item.id, 'embed')}
+                      >
+                        임베드
+                      </button>
+                    </div>
+
+                    {linkMode === 'link' ? (
+                      <input
+                        className="resume-item-link-input"
+                        placeholder="링크 URL (없으면 비워두세요)"
+                        value={item.link ?? ''}
+                        onChange={e => updateArchive(item.id, 'link', e.target.value)}
+                      />
+                    ) : (
+                      <div className="resume-item-embed-editor">
+                        {rawEmbedLinks.length === 0 && (
+                          <p className="resume-item-embed-empty">임베드 링크를 추가하면 아래에 카드처럼 표시됩니다.</p>
+                        )}
+                        {rawEmbedLinks.map((url, embedIdx) => {
+                          const previewUrl = url.trim()
+                          return (
+                            <div key={`${item.id}-embed-${embedIdx}`} className="resume-item-embed-block">
+                              <div className="resume-item-embed-row">
+                                <input
+                                  className="resume-item-link-input"
+                                  placeholder="임베드 링크 URL"
+                                  value={url}
+                                  onChange={e => updateArchiveEmbedLink(item.id, embedIdx, e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  className="resume-item-embed-remove"
+                                  onClick={() => removeArchiveEmbedLink(item.id, embedIdx)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              {previewUrl && (
+                                <div className="resume-item-link-preview">
+                                  <LinkPreviewCard url={previewUrl} />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                        <button
+                          type="button"
+                          className="resume-item-embed-add-btn"
+                          onClick={() => addArchiveEmbedLink(item.id)}
+                        >
+                          + 임베드 링크 추가
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!isAdmin && linkMode === 'embed' && embedLinks.length > 0 && (
+                  <div
+                    className="resume-item-embed-list"
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {embedLinks.map((url, embedIdx) => (
+                      <div key={`${item.id}-preview-${embedIdx}`} className="resume-item-link-preview">
+                        <LinkPreviewCard url={url} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <InlineEditable tag="span" className="resume-item-date" onBlur={v => updateArchive(item.id, 'date', v)}>{item.date}</InlineEditable>
-                {isAdmin && <button className="btn-remove-project" onClick={() => removeArchiveItem(item.id)}>삭제</button>}
-              </div>
-            </div>
-            <InlineEditable tag="p" className="resume-item-desc" onBlur={v => updateArchive(item.id, 'desc', v)}>{item.desc}</InlineEditable>
-            {isAdmin && (
-              <input className="resume-item-link-input" placeholder="링크 URL (없으면 비워두세요)"
-                value={item.link ?? ''} onChange={e => updateArchive(item.id, 'link', e.target.value)}
-                onMouseDown={e => e.stopPropagation()} />
-            )}
-          </div>
+            )
+          })()
         ))}
         {isAdmin && <button className="btn-add-record" onClick={() => addArchiveItem(sec.name)}>+ {sec.name} 추가</button>}
       </section>

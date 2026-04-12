@@ -20,13 +20,13 @@ export const defaultContent: SiteContent = {
     { id: 'hs-cert',   type: 'archive', name: '자격증' },
   ],
   archive: [
-    { id: '1', category: '경력사항', title: '회사명', date: '2026.01 ~ 2026.03', desc: '담당 업무와 주요 성과를 입력하세요.' },
-    { id: '2', category: '인턴십', title: '회사명', date: '2026.01 ~ 2026.03', desc: '인턴십 내용과 배운 점을 입력하세요.' },
-    { id: '3', category: '학력사항', title: '학교명 / 전공', date: '2026.01 ~ 2026.03', desc: '학과 및 졸업 여부를 입력하세요.' },
-    { id: '4', category: '수상', title: '수상명', date: '2026', desc: '수상 내용과 주최 기관을 입력하세요.' },
-    { id: '5', category: '어학', title: '언어 / 시험명', date: '2026', desc: '점수 및 취득 기관을 입력하세요.' },
-    { id: '6', category: '자격증', title: '자격증명', date: '2026', desc: '발급 기관을 입력하세요.' },
-    { id: '7', category: '논문', title: '논문 제목', date: '2026', desc: '게재 학술지 및 주요 내용을 입력하세요.' },
+    { id: '1', category: '경력사항', title: '회사명', date: '2026.01 ~ 2026.03', desc: '담당 업무와 주요 성과를 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '2', category: '인턴십', title: '회사명', date: '2026.01 ~ 2026.03', desc: '인턴십 내용과 배운 점을 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '3', category: '학력사항', title: '학교명 / 전공', date: '2026.01 ~ 2026.03', desc: '학과 및 졸업 여부를 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '4', category: '수상', title: '수상명', date: '2026', desc: '수상 내용과 주최 기관을 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '5', category: '어학', title: '언어 / 시험명', date: '2026', desc: '점수 및 취득 기관을 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '6', category: '자격증', title: '자격증명', date: '2026', desc: '발급 기관을 입력하세요.', linkMode: 'link', embedLinks: [] },
+    { id: '7', category: '논문', title: '논문 제목', date: '2026', desc: '게재 학술지 및 주요 내용을 입력하세요.', linkMode: 'link', embedLinks: [] },
   ],
   cards: [
     {
