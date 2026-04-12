@@ -1,4 +1,5 @@
 export type ArchiveCategory = string
+export type ArchiveLinkMode = 'link' | 'embed'
 
 export interface DetailBlock {
   type: 'text' | 'image' | 'embed'
@@ -15,7 +16,9 @@ export interface ArchiveItem {
   desc: string
   featured?: boolean
   image?: string
+  linkMode?: ArchiveLinkMode
   link?: string
+  embedLinks?: string[]
 }
 
 export interface InfoCard {

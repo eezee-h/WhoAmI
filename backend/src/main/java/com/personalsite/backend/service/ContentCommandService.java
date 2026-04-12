@@ -267,12 +267,17 @@ public class ContentCommandService {
                 .filter(item -> sectionDto.getName().equals(item.getCategory()))
                 .forEach(itemDto -> {
                     ArchiveItem item = new ArchiveItem();
+                    String linkMode = resolveArchiveLinkMode(itemDto);
+                    List<String> embedLinks = sanitizeLinks(itemDto.getEmbedLinks());
+
                     item.setSectionId(sectionId);
                     item.setTitle(itemDto.getTitle() != null ? itemDto.getTitle() : "");
                     item.setDateText(itemDto.getDate());
                     item.setSummary(itemDto.getDesc());
                     item.setImageBase64(itemDto.getImage());
-                    item.setLinkUrl(itemDto.getLink());
+                    item.setLinkMode(linkMode);
+                    item.setLinkUrl("link".equals(linkMode) ? normalizeOptionalString(itemDto.getLink()) : null);
+                    item.setEmbedLinks("embed".equals(linkMode) ? embedLinks.toArray(new String[0]) : new String[0]);
                     item.setFeatured(Boolean.TRUE.equals(itemDto.getFeatured()));
                     item.setSortOrder(order[0]++);
                     item.setCreatedAt(now);
@@ -385,5 +390,35 @@ public class ContentCommandService {
                     return infoCard;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String resolveArchiveLinkMode(ArchiveItemDto itemDto) {
+        if ("embed".equals(itemDto.getLinkMode())) {
+            return "embed";
+        }
+        if (sanitizeLinks(itemDto.getEmbedLinks()).isEmpty()) {
+            return "link";
+        }
+        return "embed";
+    }
+
+    private List<String> sanitizeLinks(List<String> links) {
+        if (links == null) {
+            return List.of();
+        }
+
+        return links.stream()
+                .filter(link -> link != null && !link.isBlank())
+                .map(String::trim)
+                .toList();
+    }
+
+    private String normalizeOptionalString(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

@@ -1,9 +1,11 @@
 package com.personalsite.backend.entity;
 
+import io.hypersistence.utils.hibernate.type.array.StringArrayType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
@@ -42,6 +44,13 @@ public class ArchiveItem {
 
     @Column(name = "link_url")
     private String linkUrl;
+
+    @Column(name = "link_mode", nullable = false)
+    private String linkMode = "link";
+
+    @Type(StringArrayType.class)
+    @Column(name = "embed_links", columnDefinition = "text[]")
+    private String[] embedLinks = new String[0];
 
     @Column(name = "featured")
     private Boolean featured = false;

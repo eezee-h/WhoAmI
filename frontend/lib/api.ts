@@ -22,6 +22,18 @@ function getDefaultSectionDescription(section: SiteContent['homeSections'][numbe
 function normalizeContent(content: SiteContent): SiteContent {
   return {
     ...content,
+    archive: (content.archive ?? []).map(item => {
+      const embedLinks = (item.embedLinks ?? [])
+        .map(link => link.trim())
+        .filter(Boolean)
+
+      return {
+        ...item,
+        link: item.link?.trim() || undefined,
+        embedLinks,
+        linkMode: item.linkMode === 'embed' || embedLinks.length > 0 ? 'embed' : 'link',
+      }
+    }),
     homeSections: (content.homeSections ?? []).map(section => ({
       ...section,
       description: section.description ?? getDefaultSectionDescription(section),

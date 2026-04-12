@@ -93,7 +93,9 @@ class ContentQueryServiceTest {
         archiveItem.setSummary("Built APIs");
         archiveItem.setFeatured(true);
         archiveItem.setImageBase64("img");
+        archiveItem.setLinkMode("embed");
         archiveItem.setLinkUrl("https://example.com");
+        archiveItem.setEmbedLinks(new String[]{"https://preview.example.com"});
 
         CardItem cardItem = new CardItem();
         cardItem.setId(cardId);
@@ -134,6 +136,8 @@ class ContentQueryServiceTest {
         assertThat(content.getArchive()).singleElement().satisfies(item -> {
             assertThat(item.getCategory()).isEqualTo("Career");
             assertThat(item.getTitle()).isEqualTo("Backend Engineer");
+            assertThat(item.getLinkMode()).isEqualTo("embed");
+            assertThat(item.getEmbedLinks()).containsExactly("https://preview.example.com");
         });
         assertThat(content.getCards()).singleElement().satisfies(item -> {
             assertThat(item.getType()).isEqualTo("activity");
