@@ -13,6 +13,8 @@ interface Props {
   placeholder?: string
 }
 
+const MARKDOWN_HEADING_RE = /^(#{1,3})\s+(.+)$/
+
 export default function DetailBlockEditor({ blocks, onChange, isAdmin, placeholder }: Props) {
   const [local, setLocal] = useState<DetailBlock[]>(blocks)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
@@ -77,6 +79,12 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     update(local.map((b, i) => i === idx ? { ...b, content } : b))
   }
 
+  function fitTextareaHeight(textarea: HTMLTextAreaElement | null) {
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }
+
   function handleTextBoldShortcut(e: React.KeyboardEvent<HTMLTextAreaElement>, idx: number) {
     if (!isBoldShortcut(e.key, e.metaKey, e.ctrlKey)) return
 
@@ -103,6 +111,50 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     setDragOverIdx(null)
   }
 
+  function renderTextBlock(block: DetailBlock, key: number) {
+    const isFull = block.span !== 'half'
+    const lines = block.content.split('\n')
+    const hasMarkdownHeading = lines.some(line => MARKDOWN_HEADING_RE.test(line))
+    const useLegacyHeading = block.textType === 'heading' && !hasMarkdownHeading
+
+    return (
+      <div key={key} className={`detail-block-text-view${isFull ? ' detail-block-view-full' : ''}`}>
+        {lines.map((line, lineIdx) => {
+          const heading = line.match(MARKDOWN_HEADING_RE)
+
+          if (heading) {
+            const level = heading[1].length
+            const Tag = level === 1 ? 'h2' : level === 2 ? 'h3' : 'h4'
+
+            return (
+              <RichText
+                key={`heading-${lineIdx}`}
+                as={Tag}
+                className={`proj-modal-detail-md-heading proj-modal-detail-md-heading-${level}`}
+                text={heading[2]}
+              />
+            )
+          }
+
+          if (!line.trim()) {
+            return <div key={`break-${lineIdx}`} className="proj-modal-detail-break" aria-hidden="true" />
+          }
+
+          return useLegacyHeading
+            ? (
+              <RichText
+                key={`legacy-heading-${lineIdx}`}
+                as="h3"
+                className="proj-modal-detail-md-heading proj-modal-detail-md-heading-2"
+                text={line}
+              />
+            )
+            : <RichText key={`text-${lineIdx}`} as="p" className="proj-modal-detail-text" text={line} />
+        })}
+      </div>
+    )
+  }
+
   if (!isAdmin) {
     if (local.length === 0) return null
     return (
@@ -121,9 +173,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             )
           }
           if (!block.content) return null
-          return block.textType === 'heading'
-            ? <RichText key={i} as="h3" className={`proj-modal-detail-heading${block.span !== 'half' ? ' detail-block-view-full' : ''}`} text={block.content} />
-            : <RichText key={i} as="p" className={`proj-modal-detail-text${block.span !== 'half' ? ' detail-block-view-full' : ''}`} text={block.content} />
+          return renderTextBlock(block, i)
         })}
       </div>
     )
@@ -151,15 +201,6 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             <div className="detail-block-header">
               <span className="detail-block-drag-handle">⠿</span>
               <div className="detail-block-header-actions">
-                {block.type === 'text' && (
-                  <button
-                    className={`detail-block-type-toggle${block.textType === 'heading' ? ' active' : ''}`}
-                    onClick={() => update(local.map((b, i) => i === idx ? { ...b, textType: b.textType === 'heading' ? 'normal' : 'heading' } : b))}
-                    title="제목/본문 전환"
-                  >
-                    {block.textType === 'heading' ? 'H' : 'T'}
-                  </button>
-                )}
                 <button className="detail-block-span-toggle" onClick={() => toggleSpan(idx)} title={block.span === 'half' ? '전체 폭으로' : '절반 폭으로'}>
                   {block.span === 'half' ? '⬛⬛' : '⬜⬛'}
                 </button>
@@ -169,10 +210,12 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             {block.type === 'text' ? (
               <textarea
                 className="detail-block-textarea"
+                ref={fitTextareaHeight}
                 value={block.content}
                 onChange={e => updateText(idx, e.target.value)}
+                onInput={e => fitTextareaHeight(e.currentTarget)}
                 placeholder="텍스트를 입력하세요..."
-                rows={4}
+                rows={12}
                 onMouseDown={e => e.stopPropagation()}
                 onKeyDown={e => handleTextBoldShortcut(e, idx)}
               />

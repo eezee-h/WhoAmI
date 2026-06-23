@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useEditor } from '@/context/EditorContext'
 import { loadContent, saveContent } from '@/lib/content'
+import { getCardSectionPath } from '@/lib/sections'
 import LoginModal from './LoginModal'
 import ConfirmModal from './ConfirmModal'
 
@@ -16,9 +17,10 @@ interface Props {
 export default function Header({ siteName, username }: Props) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isAdmin, isDirty, logout } = useEditor()
+  const { isAdmin, isAuthenticated, isDirty, startEditing, stopEditing, logout } = useEditor()
   const [modalOpen, setModalOpen] = useState(false)
   const [navConfirm, setNavConfirm] = useState<{ open: boolean; href: string }>({ open: false, href: '' })
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false)
 
   function handleNavClick(e: React.MouseEvent, href: string) {
     if (!isDirty) return
@@ -36,7 +38,7 @@ export default function Header({ siteName, username }: Props) {
         .map(s => {
           if (s.type === 'activity') return { href: `/${username}/activities`, label: s.name }
           if (s.type === 'project') return { href: `/${username}/projects`, label: s.name }
-          return { href: `/${username}/cards/${encodeURIComponent(s.name)}`, label: s.name }
+          return { href: getCardSectionPath(username, s), label: s.name }
         })
       setNavLinks([
         { href: `/${username}`, label: '홈' },
@@ -86,17 +88,36 @@ export default function Header({ siteName, username }: Props) {
           </nav>
           <div className="header-actions">
             {isAdmin && <span className="admin-badge">편집 중</span>}
-            {isAdmin && (
+            {isAuthenticated && (
               <Link href={`/${username}/settings`} className="btn-login" style={{ textDecoration: 'none' }}>
                 설정
               </Link>
             )}
             <button
               className="btn-login"
-              onClick={() => isAdmin ? logout() : setModalOpen(true)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setModalOpen(true)
+                  return
+                }
+                if (!isAdmin) {
+                  startEditing()
+                  return
+                }
+                if (isDirty) {
+                  setEditConfirmOpen(true)
+                  return
+                }
+                stopEditing()
+              }}
             >
-              {isAdmin ? '편집 종료' : '로그인'}
+              {!isAuthenticated ? '로그인' : isAdmin ? '편집 종료' : '편집 시작'}
             </button>
+            {isAuthenticated && (
+              <button className="btn-login" onClick={logout}>
+                로그아웃
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -107,6 +128,13 @@ export default function Header({ siteName, username }: Props) {
         confirmLabel="페이지 이동"
         onConfirm={() => { const href = navConfirm.href; setNavConfirm({ open: false, href: '' }); router.push(href) }}
         onCancel={() => setNavConfirm({ open: false, href: '' })}
+      />
+      <ConfirmModal
+        open={editConfirmOpen}
+        message={'저장하지 않은 변경사항이 있습니다.\n편집 모드를 종료하시겠습니까?'}
+        confirmLabel="편집 종료"
+        onConfirm={() => { setEditConfirmOpen(false); stopEditing() }}
+        onCancel={() => setEditConfirmOpen(false)}
       />
     </>
   )

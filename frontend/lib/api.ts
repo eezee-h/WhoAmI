@@ -1,5 +1,6 @@
 import type { SiteContent } from './types'
 import { defaultContent } from './defaultContent'
+import { normalizeSectionSlug } from './sections'
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '')
 
@@ -36,6 +37,7 @@ function normalizeContent(content: SiteContent): SiteContent {
     }),
     homeSections: (content.homeSections ?? []).map(section => ({
       ...section,
+      slug: section.type === 'card' ? normalizeSectionSlug(section.slug || section.name) : section.slug,
       description: section.description ?? getDefaultSectionDescription(section),
     })),
   }
