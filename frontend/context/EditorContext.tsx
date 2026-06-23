@@ -8,6 +8,7 @@ interface EditorContextType {
   isAuthenticated: boolean
   isDirty: boolean
   setDirty: (v: boolean) => void
+  storeSession: (password: string) => void
   login: (username: string, id: string, password: string) => Promise<boolean>
   startEditing: () => void
   stopEditing: () => void
@@ -19,6 +20,7 @@ const EditorContext = createContext<EditorContextType>({
   isAuthenticated: false,
   isDirty: false,
   setDirty: () => {},
+  storeSession: () => {},
   login: async () => false,
   startEditing: () => {},
   stopEditing: () => {},
@@ -36,14 +38,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     setIsAdmin(authenticated && sessionStorage.getItem('site-editing') !== 'false')
   }, [])
 
-  async function login(username: string, id: string, password: string): Promise<boolean> {
-    const ok = await verifyUser(username, id, password)
-    if (!ok) return false
+  function storeSession(password: string) {
     sessionStorage.setItem('site-admin', 'true')
     sessionStorage.setItem('site-editing', 'true')
     sessionStorage.setItem('site-admin-password', password)
     setIsAuthenticated(true)
     setIsAdmin(true)
+  }
+
+  async function login(username: string, id: string, password: string): Promise<boolean> {
+    const ok = await verifyUser(username, id, password)
+    if (!ok) return false
+    storeSession(password)
     return true
   }
 
@@ -69,7 +75,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <EditorContext.Provider value={{ isAdmin, isAuthenticated, isDirty, setDirty, login, startEditing, stopEditing, logout }}>
+    <EditorContext.Provider value={{ isAdmin, isAuthenticated, isDirty, setDirty, storeSession, login, startEditing, stopEditing, logout }}>
       {children}
     </EditorContext.Provider>
   )

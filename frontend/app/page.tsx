@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { registerUser, findPageByCredentials } from '@/lib/users'
+import { useEditor } from '@/context/EditorContext'
 
 type Tab = 'signup' | 'login'
 
@@ -11,6 +12,7 @@ const hintStyle = { fontSize: '0.78rem', color: '#aaa', marginTop: '-0.25rem' }
 
 export default function LandingPage() {
   const router = useRouter()
+  const { storeSession } = useEditor()
   const [tab, setTab] = useState<Tab>('login')
   const [pageName, setPageName] = useState('')
   const [signupId, setSignupId] = useState('')
@@ -35,6 +37,7 @@ export default function LandingPage() {
     const result = await registerUser(u, sid, password)
     setLoading(false)
     if (!result.ok) return setError(result.error ?? '오류가 발생했습니다.')
+    storeSession(password)
     router.push(`/${u}`)
   }
 
@@ -46,6 +49,7 @@ export default function LandingPage() {
     const page = await findPageByCredentials(inputId, password)
     setLoading(false)
     if (!page) return setError('아이디 또는 비밀번호가 올바르지 않습니다.')
+    storeSession(password)
     router.push(`/${page}`)
   }
 
