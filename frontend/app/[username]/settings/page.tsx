@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const params = useParams()
   const router = useRouter()
   const username = decodeURIComponent(params.username as string)
-  const { isAdmin, logout } = useEditor()
+  const { isAuthenticated, logout } = useEditor()
 
   const [currentTheme, setCurrentTheme] = useState<ThemeKey>(() => loadTheme(username))
   const [password, setPassword] = useState('')
@@ -25,7 +25,7 @@ export default function SettingsPage() {
     apiSetTheme(username, password, key)
   }
 
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     return (
       <div style={{ maxWidth: 480, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
         <p style={{ color: '#888' }}>관리자 로그인 후 접근할 수 있습니다.</p>

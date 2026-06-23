@@ -9,11 +9,12 @@ import CardModal from '@/components/CardModal'
 import InlineEditable from '@/components/InlineEditable'
 import RichText from '@/components/RichText'
 import { useEditor } from '@/context/EditorContext'
+import { getSectionSlug } from '@/lib/sections'
 
 export default function CustomCardSectionPage() {
   const params = useParams()
   const username = decodeURIComponent(params.username as string)
-  const sectionName = decodeURIComponent(params.section as string)
+  const sectionParam = decodeURIComponent(params.section as string)
 
   const [content, setContent] = useState<SiteContent | null>(null)
   const contentRef = useRef<SiteContent | null>(null)
@@ -27,10 +28,14 @@ export default function CustomCardSectionPage() {
 
   if (!content) return null
 
-  const items = content.cards.filter(c => c.type === sectionName)
+  const cardSection =
+    content.homeSections.find(section => section.type === 'card' && getSectionSlug(section) === sectionParam)
+    ?? content.homeSections.find(section => section.type === 'card' && section.name === sectionParam)
+  const sectionName = cardSection?.name ?? sectionParam
+  const items = cardSection ? content.cards.filter(c => c.type === sectionName) : []
   const selectedItem = items.find(i => i.id === selectedId) ?? null
   const sectionDescription =
-    content.homeSections.find(section => section.type === 'card' && section.name === sectionName)?.description?.trim()
+    cardSection?.description?.trim()
     || `${sectionName} 섹션에 대한 설명을 입력하세요.`
 
   function updateItem(id: string, updates: Partial<CardItem>) {
@@ -46,7 +51,7 @@ export default function CustomCardSectionPage() {
       return {
         ...prev,
         homeSections: prev.homeSections.map(section =>
-          section.type === 'card' && section.name === sectionName ? { ...section, description } : section,
+          section.id === cardSection?.id ? { ...section, description } : section,
         ),
       }
     })

@@ -12,6 +12,7 @@ import LinkPreviewCard from '@/components/LinkPreviewCard'
 import SaveButton from '@/components/SaveButton'
 import ConfirmModal from '@/components/ConfirmModal'
 import { useEditor } from '@/context/EditorContext'
+import { getCardSectionPath, getSectionSlug, normalizeSectionSlug } from '@/lib/sections'
 
 export default function UserHomePage() {
   const params = useParams()
@@ -27,6 +28,7 @@ export default function UserHomePage() {
   const [dragOverSectionIdx, setDragOverSectionIdx] = useState<number | null>(null)
   const [addMode, setAddMode] = useState<null | 'select' | 'archive' | 'card'>(null)
   const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionSlug, setNewSectionSlug] = useState('')
   const { isAdmin, isDirty, setDirty } = useEditor()
   const router = useRouter()
   const [navConfirm, setNavConfirm] = useState<{ open: boolean; message: string; href: string; saveFirst: boolean }>({
@@ -43,6 +45,13 @@ export default function UserHomePage() {
     if (!isDirty || !isAdmin) return
     e.preventDefault()
     setNavConfirm({ open: true, message: '저장하지 않은 변경사항이 있습니다.\n저장 후 이동하시겠습니까?', href, saveFirst: true })
+  }
+
+  function updateNewSectionName(value: string) {
+    if (addMode === 'card' && (!newSectionSlug || newSectionSlug === normalizeSectionSlug(newSectionName))) {
+      setNewSectionSlug(normalizeSectionSlug(value))
+    }
+    setNewSectionName(value)
   }
 
   useEffect(() => { loadContent(username).then(c => { setContent(c); isLoaded.current = true }) }, [username])
@@ -185,16 +194,19 @@ export default function UserHomePage() {
     return ''
   }
 
-  function addSection(type: 'archive' | 'card', name: string) {
+  function addSection(type: 'archive' | 'card', name: string, slug?: string) {
     const trimmed = name.trim()
     if (!trimmed) return
     setContent(prev => {
       if (!prev) return prev
+      const normalizedSlug = type === 'card' ? normalizeSectionSlug(slug || trimmed) : undefined
       if (prev.homeSections.some(s => s.name === trimmed && s.type === type)) return prev
+      if (type === 'card' && normalizedSlug && prev.homeSections.some(s => s.type === 'card' && getSectionSlug(s) === normalizedSlug)) return prev
       const newSection: HomeSection = {
         id: `${type}-${Date.now()}`,
         type,
         name: trimmed,
+        slug: normalizedSlug,
         description: getDefaultSectionDescription(type, trimmed),
       }
       return { ...prev, homeSections: [...prev.homeSections, newSection] }
@@ -454,12 +466,13 @@ export default function UserHomePage() {
 
   function renderCardSection(sec: HomeSection, idx: number) {
     const sectionCards = cards.filter(c => c.type === sec.name)
+    const href = getCardSectionPath(username, sec)
     return (
       <section key={sec.id} className={sectionClass(idx)} {...sectionDragProps(idx)}>
         <div className="resume-section-title">
           <span>{sec.name}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link href={`/${username}/cards/${encodeURIComponent(sec.name)}`} className="section-more" onClick={e => guardNavSave(e, `/${username}/cards/${encodeURIComponent(sec.name)}`)}>전체 보기 →</Link>
+            <Link href={href} className="section-more" onClick={e => guardNavSave(e, href)}>전체 보기 →</Link>
             {isAdmin && <button className="btn-remove-project" onClick={() => removeSection(sec.id)}>섹션 삭제</button>}
           </div>
         </div>
@@ -561,7 +574,7 @@ export default function UserHomePage() {
       })}
 
       {isAdmin && (
-        <button className="btn-add-record" onClick={() => { setNewSectionName(''); setAddMode('select') }}>
+        <button className="btn-add-record" onClick={() => { setNewSectionName(''); setNewSectionSlug(''); setAddMode('select') }}>
           + 섹션 추가
         </button>
       )}
@@ -574,8 +587,8 @@ export default function UserHomePage() {
               <>
                 <p>추가할 섹션 종류를 선택하세요.</p>
                 <div className="modal-actions">
-                  <button className="btn-primary" onClick={() => { setNewSectionName(''); setAddMode('archive') }}>기록 섹션</button>
-                  <button className="btn-primary" onClick={() => { setNewSectionName(''); setAddMode('card') }}>카드 섹션</button>
+                  <button className="btn-primary" onClick={() => { setNewSectionName(''); setNewSectionSlug(''); setAddMode('archive') }}>기록 섹션</button>
+                  <button className="btn-primary" onClick={() => { setNewSectionName(''); setNewSectionSlug(''); setAddMode('card') }}>카드 섹션</button>
                 </div>
               </>
             )}
@@ -586,18 +599,32 @@ export default function UserHomePage() {
                   className="resume-item-link-input"
                   placeholder={addMode === 'archive' ? '예: 봉사활동, 어학...' : '예: 스터디, 수상...'}
                   value={newSectionName}
-                  onChange={e => setNewSectionName(e.target.value)}
+                  onChange={e => updateNewSectionName(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && newSectionName.trim()) {
-                      addSection(addMode, newSectionName.trim()); setAddMode(null)
+                      addSection(addMode, newSectionName.trim(), newSectionSlug); setAddMode(null)
                     }
                   }}
                   autoFocus
                 />
+                {addMode === 'card' && (
+                  <input
+                    className="resume-item-link-input"
+                    placeholder="URL 이름 (예: study, awards)"
+                    value={newSectionSlug}
+                    onChange={e => setNewSectionSlug(normalizeSectionSlug(e.target.value))}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newSectionName.trim()) {
+                        addSection(addMode, newSectionName.trim(), newSectionSlug); setAddMode(null)
+                      }
+                    }}
+                    style={{ marginTop: '0.75rem' }}
+                  />
+                )}
                 <div className="modal-actions" style={{ marginTop: '1rem' }}>
                   <button className="btn-cancel" onClick={() => setAddMode('select')}>← 뒤로</button>
                   <button className="btn-primary" disabled={!newSectionName.trim()}
-                    onClick={() => { addSection(addMode, newSectionName.trim()); setAddMode(null) }}>
+                    onClick={() => { addSection(addMode, newSectionName.trim(), newSectionSlug); setAddMode(null) }}>
                     만들기
                   </button>
                 </div>

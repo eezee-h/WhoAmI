@@ -84,6 +84,7 @@ public class ContentCommandService {
             section.setPageUsername(pageUsername);
             section.setSectionKind(sectionDefs[index][0]);
             section.setTitle(sectionDefs[index][1]);
+            section.setSlug(resolveSectionSlug(sectionDefs[index][0], sectionDefs[index][1], null));
             section.setSortOrder(index);
             section.setIsVisible(true);
             section.setCreatedAt(now);
@@ -187,6 +188,7 @@ public class ContentCommandService {
             section.setPageUsername(canonicalUsername);
             section.setSectionKind(sectionDto.getType());
             section.setTitle(sectionDto.getName());
+            section.setSlug(resolveSectionSlug(sectionDto.getType(), sectionDto.getName(), sectionDto.getSlug()));
             section.setDescription(sectionDto.getDescription());
             section.setSortOrder(sectionIndex);
             section.setIsVisible(true);
@@ -365,6 +367,18 @@ public class ContentCommandService {
             case "project" -> "project";
             default -> section.getTitle();
         };
+    }
+
+    private String resolveSectionSlug(String sectionType, String sectionName, String slug) {
+        if (!"card".equals(sectionType)) {
+            return null;
+        }
+
+        String normalizedSlug = normalizeOptionalString(slug);
+        if (normalizedSlug != null) {
+            return normalizedSlug;
+        }
+        return normalizeOptionalString(sectionName);
     }
 
     private List<Map<String, Object>> fromInfoCards(List<InfoCardDto> dtos) {

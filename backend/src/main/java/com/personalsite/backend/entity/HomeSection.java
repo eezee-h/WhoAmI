@@ -28,6 +28,9 @@ public class HomeSection {
     @Column(name = "title", nullable = false, length = 100)
     private String title;
 
+    @Column(name = "slug", length = 120)
+    private String slug;
+
     @Column(name = "description")
     private String description;
 

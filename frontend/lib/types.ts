@@ -50,6 +50,7 @@ export interface HomeSection {
   id: string
   type: HomeSectionType
   name: string
+  slug?: string | null
   description?: string
 }
 
