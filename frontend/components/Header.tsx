@@ -60,7 +60,7 @@ export default function Header({ siteName, username }: Props) {
   return (
     <>
       <header className="site-header">
-        <div className="header-inner">
+        <div className={`header-inner${isAuthenticated ? ' header-inner-authenticated' : ''}`}>
           {isAdmin ? (
             <span
               className="site-logo"
@@ -74,7 +74,7 @@ export default function Header({ siteName, username }: Props) {
           ) : (
             <Link href={`/${username}`} className="site-logo">{displayName}</Link>
           )}
-          <nav className="site-nav">
+          <nav className="site-nav" aria-label="주 메뉴">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
