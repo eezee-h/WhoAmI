@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import type { DetailBlock } from '@/lib/types'
 import { resizeImageToBase64 } from '@/lib/imageUtils'
 import RichText from './RichText'
@@ -15,12 +15,57 @@ interface Props {
 
 const MARKDOWN_HEADING_RE = /^(#{1,3})\s+(.+)$/
 
+interface TextBlockInputProps {
+  block: DetailBlock
+  onChange: (content: string) => void
+  onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>
+}
+
+function TextBlockInput({ block, onChange, onKeyDown }: TextBlockInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    // Drag state must not trigger a resize. Preserve the modal's position while
+    // temporarily shrinking the field to measure changed text or column width.
+    const scrollContainer = textarea.closest<HTMLElement>('.proj-modal-scroll')
+    const scrollTop = scrollContainer?.scrollTop ?? 0
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+    if (scrollContainer) scrollContainer.scrollTop = scrollTop
+  }, [block.content, block.span])
+
+  return (
+    <textarea
+      className="detail-block-textarea"
+      ref={textareaRef}
+      value={block.content}
+      onChange={e => onChange(e.target.value)}
+      placeholder="텍스트를 입력하세요..."
+      rows={12}
+      onMouseDown={e => e.stopPropagation()}
+      onKeyDown={onKeyDown}
+    />
+  )
+}
+
 export default function DetailBlockEditor({ blocks, onChange, isAdmin, placeholder }: Props) {
   const [local, setLocal] = useState<DetailBlock[]>(blocks)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const reorderScroll = useRef<{ container: HTMLElement; top: number } | null>(null)
 
   useEffect(() => { setLocal(blocks) }, [blocks])
+
+  useLayoutEffect(() => {
+    // Restore once every moved text field has measured its new position.
+    const pending = reorderScroll.current
+    if (!pending) return
+    pending.container.scrollTop = pending.top
+    reorderScroll.current = null
+  }, [local])
 
   function update(next: DetailBlock[]) {
     setLocal(next)
@@ -79,12 +124,6 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     update(local.map((b, i) => i === idx ? { ...b, content } : b))
   }
 
-  function fitTextareaHeight(textarea: HTMLTextAreaElement | null) {
-    if (!textarea) return
-    textarea.style.height = 'auto'
-    textarea.style.height = `${textarea.scrollHeight}px`
-  }
-
   function handleTextBoldShortcut(e: React.KeyboardEvent<HTMLTextAreaElement>, idx: number) {
     if (!isBoldShortcut(e.key, e.metaKey, e.ctrlKey)) return
 
@@ -101,8 +140,10 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     update(local.map((b, i) => i === idx ? { ...b, span: b.span === 'half' ? 'full' : 'half' } : b))
   }
 
-  function handleDrop(toIdx: number) {
+  function handleDrop(toIdx: number, target: HTMLElement) {
     if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOverIdx(null); return }
+    const container = target.closest<HTMLElement>('.proj-modal-scroll')
+    if (container) reorderScroll.current = { container, top: container.scrollTop }
     const next = [...local]
     const [moved] = next.splice(dragIdx, 1)
     next.splice(toIdx, 0, moved)
@@ -194,7 +235,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             onDragStart={() => setDragIdx(idx)}
             onDragOver={e => { e.preventDefault(); setDragOverIdx(idx) }}
             onDragLeave={() => setDragOverIdx(null)}
-            onDrop={() => handleDrop(idx)}
+            onDrop={e => { e.preventDefault(); handleDrop(idx, e.currentTarget) }}
             onDragEnd={() => { setDragIdx(null); setDragOverIdx(null) }}
             style={{ cursor: 'grab' }}
           >
@@ -208,15 +249,9 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
               </div>
             </div>
             {block.type === 'text' ? (
-              <textarea
-                className="detail-block-textarea"
-                ref={fitTextareaHeight}
-                value={block.content}
-                onChange={e => updateText(idx, e.target.value)}
-                onInput={e => fitTextareaHeight(e.currentTarget)}
-                placeholder="텍스트를 입력하세요..."
-                rows={12}
-                onMouseDown={e => e.stopPropagation()}
+              <TextBlockInput
+                block={block}
+                onChange={content => updateText(idx, content)}
                 onKeyDown={e => handleTextBoldShortcut(e, idx)}
               />
             ) : block.type === 'embed' ? (
