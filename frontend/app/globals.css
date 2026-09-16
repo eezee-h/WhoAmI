@@ -645,7 +645,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .detail-image-open .detail-block-img { max-height: min(var(--image-height), 65vh); object-fit: contain; border-radius: inherit; }
 .detail-image-small { --image-width: 280px; --image-height: 240px; }
 .detail-image-medium { --image-width: 560px; --image-height: 420px; }
-.detail-image-full { --image-width: 100%; --image-height: 640px; }
+.detail-image-full { --image-width: 100%; }
+.detail-image-full .detail-block-img { width: 100%; max-height: none; }
 .detail-block-add-btn:disabled { opacity: 0.5; cursor: wait; }
 .image-viewer { width: calc(100vw - 2rem); height: calc(100vh - 2rem); height: calc(100dvh - 2rem); max-width: none; max-height: none; margin: auto; padding: 0; border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radius-md); background: #101725; color: white; overflow: hidden; }
 .image-viewer[open] { display: flex; flex-direction: column; }
