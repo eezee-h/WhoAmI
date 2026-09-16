@@ -6,6 +6,7 @@ export interface DetailBlock {
   content: string
   span?: 'full' | 'half'
   textType?: 'normal' | 'heading'
+  imageSize?: 'small' | 'medium' | 'full'
 }
 
 export interface ArchiveItem {

@@ -332,6 +332,9 @@ public class ContentCommandService {
             if (blockDto.getTextType() != null) {
                 payload.put("textType", blockDto.getTextType());
             }
+            if (blockDto.getImageSize() != null) {
+                payload.put("imageSize", blockDto.getImageSize());
+            }
 
             block.setPayload(payload);
             block.setSortOrder(blockIndex);

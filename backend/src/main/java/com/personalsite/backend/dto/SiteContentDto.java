@@ -90,6 +90,7 @@ public class SiteContentDto {
         private final String content;
         private final String span;
         private final String textType;
+        private final String imageSize;
     }
 
     @Getter

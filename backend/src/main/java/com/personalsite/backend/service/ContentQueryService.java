@@ -203,6 +203,7 @@ public class ContentQueryService {
                 .content(getString(payload, "content"))
                 .span(getString(payload, "span"))
                 .textType(getString(payload, "textType"))
+                .imageSize(getString(payload, "imageSize"))
                 .build();
     }
 
