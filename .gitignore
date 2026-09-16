@@ -11,8 +11,9 @@ backend/target/
 db/data/
 
 # Env
-.env.local
-.env*.local
+.env
+.env.*
+!.env.example
 
 # Tool internals
 .bkit/
