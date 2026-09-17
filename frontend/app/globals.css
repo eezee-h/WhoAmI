@@ -637,6 +637,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .detail-block-editor:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; border-radius: var(--radius-sm); }
 .detail-image-help { color: var(--color-text-sub); font-size: 0.8125rem; }
 .detail-image-error { color: #c53030; font-size: 0.875rem; }
+.detail-image-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; min-height: 220px; padding: 1.25rem; border: 2px dashed var(--color-border); border-radius: var(--radius-md); background: rgba(34,118,245,0.03); text-align: center; color: var(--color-text); cursor: default; }
+.detail-image-placeholder:focus-within { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.detail-image-placeholder p { margin: 0; }
+.detail-image-placeholder-icon { font-size: 1.75rem; color: var(--color-primary); }
+.detail-image-file-button { min-height: 44px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); background: var(--color-primary); color: white; font-size: 0.875rem; }
+.detail-image-file-button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.detail-image-file-button:disabled { opacity: 0.5; cursor: wait; }
 .detail-image-sizes { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .detail-image-sizes button { padding: 0.35rem 0.6rem; min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-sub); font-size: 0.8125rem; }
 .detail-image-sizes button[aria-pressed='true'] { color: white; background: var(--color-primary); border-color: var(--color-primary); }

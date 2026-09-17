@@ -62,11 +62,18 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const reorderScroll = useRef<{ container: HTMLElement; top: number } | null>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
+  // Keep upload targets stable when blocks move or their settings change.
+  // These editor-only keys are not sent to the API.
+  const blockKeys = useRef(new WeakMap<DetailBlock, number>())
+  const nextBlockKey = useRef(0)
+  const focusImageKey = useRef<number | null>(null)
   const localRef = useRef(blocks)
   const mounted = useRef(true)
   const importingImages = useRef(false)
   const [imageLoading, setImageLoading] = useState(false)
-  const [imageError, setImageError] = useState('')
+  const [loadingImageKey, setLoadingImageKey] = useState<number | null>(null)
+  const [imageError, setImageError] = useState<{ targetKey: number | null; message: string } | null>(null)
 
   useEffect(() => { localRef.current = blocks; setLocal(blocks) }, [blocks])
   useEffect(() => {
@@ -82,6 +89,31 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     reorderScroll.current = null
   }, [local])
 
+  useLayoutEffect(() => {
+    const key = focusImageKey.current
+    if (key === null) return
+    const target = editorRef.current?.querySelector<HTMLElement>(`[data-image-key="${key}"]`)
+    if (!target) return
+    focusImageKey.current = null
+    target.focus({ preventScroll: true })
+    target.scrollIntoView({ block: 'nearest' })
+  }, [local])
+
+  function getBlockKey(block: DetailBlock) {
+    let key = blockKeys.current.get(block)
+    if (key === undefined) {
+      key = nextBlockKey.current++
+      blockKeys.current.set(block, key)
+    }
+    return key
+  }
+
+  function patchBlock(block: DetailBlock, changes: Partial<DetailBlock>): DetailBlock {
+    const next = { ...block, ...changes }
+    blockKeys.current.set(next, getBlockKey(block))
+    return next
+  }
+
   function update(next: DetailBlock[]) {
     localRef.current = next
     setLocal(next)
@@ -92,11 +124,13 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
     update([...local, { type: 'text', content: '', span: 'full' }])
   }
 
-  async function importImages(files: File[]) {
+  async function importImages(files: File[], targetKey: number | null = null) {
     if (importingImages.current || files.length === 0) return
+    if (targetKey !== null && !localRef.current.some(block => getBlockKey(block) === targetKey && block.type === 'image' && !block.content)) return
     importingImages.current = true
     setImageLoading(true)
-    setImageError('')
+    setLoadingImageKey(targetKey)
+    setImageError(null)
     try {
       const images = await Promise.all(files.map(async file => ({
         type: 'image' as const,
@@ -104,34 +138,56 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
         span: 'full' as const,
         imageSize: 'medium' as const,
       })))
-      if (mounted.current) update([...localRef.current, ...images])
+      if (!mounted.current) return
+      const current = localRef.current
+      if (targetKey === null) {
+        update([...current, ...images])
+      } else {
+        const index = current.findIndex(block => getBlockKey(block) === targetKey)
+        const target = current[index]
+        // A deleted or already-filled box must never replace another block.
+        if (!target || target.type !== 'image' || target.content) return
+        const replacements = images.map((image, i) => i === 0
+          ? patchBlock(target, { content: image.content })
+          : { ...target, content: image.content })
+        update([...current.slice(0, index), ...replacements, ...current.slice(index + 1)])
+      }
     } catch {
-      if (mounted.current) setImageError('사진을 불러오지 못했습니다. PNG 또는 JPEG 파일로 다시 시도해 주세요.')
+      if (mounted.current) setImageError({ targetKey, message: '사진을 불러오지 못했습니다. PNG 또는 JPEG 파일로 다시 시도해 주세요.' })
     } finally {
       importingImages.current = false
-      if (mounted.current) setImageLoading(false)
+      if (mounted.current) {
+        setImageLoading(false)
+        setLoadingImageKey(null)
+      }
     }
   }
 
   function addImage() {
+    const block: DetailBlock = { type: 'image', content: '', span: 'full', imageSize: 'medium' }
+    focusImageKey.current = getBlockKey(block)
+    update([...localRef.current, block])
+  }
+
+  function chooseImages(targetKey: number) {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
     input.multiple = true
-    input.onchange = () => { void importImages(Array.from(input.files ?? [])) }
+    input.onchange = () => { void importImages(Array.from(input.files ?? []), targetKey) }
     input.click()
   }
 
-  function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+  function handlePaste(e: React.ClipboardEvent<HTMLDivElement>, targetKey: number | null = null) {
     const files = Array.from(e.clipboardData.files).filter(file => file.type.startsWith('image/'))
     if (files.length === 0) return
     e.preventDefault()
     e.stopPropagation()
     if (importingImages.current) {
-      setImageError('사진을 추가하는 중입니다. 잠시 후 다시 붙여넣어 주세요.')
+      setImageError({ targetKey, message: '사진을 추가하는 중입니다. 잠시 후 다시 붙여넣어 주세요.' })
       return
     }
-    void importImages(files)
+    void importImages(files, targetKey)
   }
 
   function addEmbed() {
@@ -166,7 +222,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
   }
 
   function updateText(idx: number, content: string) {
-    update(local.map((b, i) => i === idx ? { ...b, content } : b))
+    update(local.map((b, i) => i === idx ? patchBlock(b, { content }) : b))
   }
 
   function handleTextBoldShortcut(e: React.KeyboardEvent<HTMLTextAreaElement>, idx: number) {
@@ -182,7 +238,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
   }
 
   function toggleSpan(idx: number) {
-    update(local.map((b, i) => i === idx ? { ...b, span: b.span === 'half' ? 'full' : 'half' } : b))
+    update(local.map((b, i) => i === idx ? patchBlock(b, { span: b.span === 'half' ? 'full' : 'half' }) : b))
   }
 
   function handleDrop(toIdx: number, target: HTMLElement) {
@@ -247,6 +303,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
       <div className="detail-block-view">
         {local.map((block, i) => {
           if (block.type === 'image') {
+            if (!block.content) return null
             return (
               <div key={i} className={block.span !== 'half' ? 'detail-block-view-full' : undefined}>
                 <DetailImage block={block} />
@@ -270,10 +327,10 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
   }
 
   return (
-    <div className="detail-block-editor" tabIndex={0} aria-label="상세 내용 편집 및 사진 붙여넣기" onPaste={handlePaste}>
-      <p className="detail-image-help">사진을 복사한 뒤 이 영역에서 Ctrl+V 또는 ⌘V로 붙여넣으세요. 사진은 맨 아래에 추가됩니다.</p>
-      {imageLoading && <p className="detail-image-help" role="status">사진을 추가하는 중…</p>}
-      {imageError && <p className="detail-image-error" role="alert">{imageError}</p>}
+    <div ref={editorRef} className="detail-block-editor" tabIndex={0} aria-label="상세 내용 편집 및 사진 붙여넣기" onPaste={handlePaste}>
+      <p className="detail-image-help">+ 이미지로 빈 박스를 만든 뒤 사진을 붙여넣거나 파일을 불러오세요.</p>
+      {imageLoading && loadingImageKey === null && <p className="detail-image-help" role="status">사진을 추가하는 중…</p>}
+      {imageError && imageError.targetKey === null && <p className="detail-image-error" role="alert">{imageError.message}</p>}
       {local.length === 0 && (
         <p className="detail-block-placeholder">{placeholder || '내용을 추가하세요.'}</p>
       )}
@@ -281,7 +338,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
       <div className="detail-block-grid">
         {local.map((block, idx) => (
           <div
-            key={idx}
+            key={getBlockKey(block)}
             className={`detail-block-item${block.span !== 'half' ? ' detail-block-full' : ''}${dragOverIdx === idx && dragIdx !== idx ? ' detail-block-drag-over' : ''}${dragIdx === idx ? ' detail-block-dragging' : ''}`}
             draggable
             onDragStart={() => setDragIdx(idx)}
@@ -294,14 +351,14 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             <div className="detail-block-header">
               <span className="detail-block-drag-handle">⠿</span>
               <div className="detail-block-header-actions">
-                {block.type === 'image' && (
+                {block.type === 'image' && block.content && (
                   <div className="detail-image-sizes" role="group" aria-label="사진 크기">
                     {IMAGE_SIZES.map(size => (
                       <button
                         key={size.value}
                         type="button"
                         aria-pressed={(block.imageSize ?? 'medium') === size.value}
-                        onClick={() => update(local.map((item, i) => i === idx ? { ...item, imageSize: size.value } : item))}
+                        onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageSize: size.value }) : item))}
                       >{size.label}</button>
                     ))}
                   </div>
@@ -338,6 +395,29 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
                   )
                 })()}
               </div>
+            ) : !block.content ? (
+              <div
+                className="detail-image-placeholder"
+                role="group"
+                aria-label="사진 추가 영역"
+                aria-busy={imageLoading && loadingImageKey === getBlockKey(block)}
+                tabIndex={0}
+                data-image-key={getBlockKey(block)}
+                onPaste={e => handlePaste(e, getBlockKey(block))}
+                onMouseDown={e => e.stopPropagation()}
+                onClick={e => {
+                  if (!(e.target as HTMLElement).closest('button')) e.currentTarget.focus({ preventScroll: true })
+                }}
+              >
+                <span className="detail-image-placeholder-icon" aria-hidden="true">＋</span>
+                <p>사진을 붙여넣으세요</p>
+                <p className="detail-image-help">Ctrl+V / ⌘V 또는</p>
+                <button type="button" className="detail-image-file-button" onClick={() => chooseImages(getBlockKey(block))} disabled={imageLoading}>
+                  이미지 불러오기
+                </button>
+                {imageLoading && loadingImageKey === getBlockKey(block) && <p className="detail-image-help" role="status">사진을 추가하는 중…</p>}
+                {imageError?.targetKey === getBlockKey(block) && <p className="detail-image-error" role="alert">{imageError.message}</p>}
+              </div>
             ) : (
               <DetailImage block={block} />
             )}
@@ -347,7 +427,7 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
 
       <div className="detail-block-add-row">
         <button className="detail-block-add-btn" onClick={addText}>+ 텍스트</button>
-        <button className="detail-block-add-btn" onClick={addImage} disabled={imageLoading}>+ 이미지</button>
+        <button className="detail-block-add-btn" onClick={addImage}>+ 이미지</button>
         <button className="detail-block-add-btn" onClick={addEmbed}>+ 영상</button>
       </div>
     </div>
