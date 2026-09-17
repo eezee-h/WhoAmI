@@ -411,7 +411,6 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
               >
                 <span className="detail-image-placeholder-icon" aria-hidden="true">＋</span>
                 <p>사진을 붙여넣으세요</p>
-                <p className="detail-image-help">Ctrl+V / ⌘V 또는</p>
                 <button type="button" className="detail-image-file-button" onClick={() => chooseImages(getBlockKey(block))} disabled={imageLoading}>
                   이미지 불러오기
                 </button>
