@@ -354,7 +354,21 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             style={{ cursor: 'grab' }}
           >
             <div className="detail-block-header">
-              <span className="detail-block-drag-handle">⠿</span>
+              <div className="detail-block-header-leading">
+                <span className="detail-block-drag-handle">⠿</span>
+                {block.type === 'image' && block.content && block.imageSize !== 'full' && (
+                  <div className="detail-image-alignments" role="group" aria-label="사진 정렬">
+                    {IMAGE_ALIGNMENTS.map(align => (
+                      <button
+                        key={align.value}
+                        type="button"
+                        aria-pressed={(block.imageAlign ?? 'center') === align.value}
+                        onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageAlign: align.value }) : item))}
+                      >{align.label}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="detail-block-header-actions">
                 {block.type === 'image' && block.content && (
                   <div className="detail-image-sizes" role="group" aria-label="사진 크기">
@@ -365,18 +379,6 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
                         aria-pressed={(block.imageSize ?? 'medium') === size.value}
                         onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageSize: size.value }) : item))}
                       >{size.label}</button>
-                    ))}
-                  </div>
-                )}
-                {block.type === 'image' && block.content && block.imageSize !== 'full' && (
-                  <div className="detail-image-alignments" role="group" aria-label="사진 정렬">
-                    {IMAGE_ALIGNMENTS.map(align => (
-                      <button
-                        key={align.value}
-                        type="button"
-                        aria-pressed={(block.imageAlign ?? 'center') === align.value}
-                        onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageAlign: align.value }) : item))}
-                      >{align.label}</button>
                     ))}
                   </div>
                 )}

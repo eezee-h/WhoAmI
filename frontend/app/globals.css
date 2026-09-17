@@ -607,8 +607,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .detail-block-dragging { opacity: 0.4; }
 .detail-block-drag-over { outline: 2px dashed var(--color-primary); background: rgba(34,118,245,0.05) !important; }
 .detail-block-full { grid-column: 1 / -1; }
-.detail-block-header { display: flex; align-items: center; justify-content: space-between; }
-.detail-block-header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; min-width: 0; gap: 0.4rem; }
+.detail-block-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+.detail-block-header-leading { display: flex; align-items: center; flex-wrap: wrap; min-width: 0; max-width: 100%; gap: 0.5rem; }
+.detail-block-header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; min-width: 0; max-width: 100%; margin-left: auto; gap: 0.4rem; }
 .detail-block-drag-handle { font-size: 1rem; color: var(--color-text-sub); opacity: 0.5; user-select: none; line-height: 1; }
 .detail-block-type-toggle {
   background: none; border: 1px solid var(--color-border); border-radius: 3px; cursor: pointer;
