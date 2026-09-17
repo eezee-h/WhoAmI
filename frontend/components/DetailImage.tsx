@@ -13,6 +13,7 @@ export default function DetailImage({ block }: Props) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const imageSize = block.imageSize === 'small' || block.imageSize === 'full' ? block.imageSize : 'medium'
+  const imageAlign = block.imageAlign === 'left' || block.imageAlign === 'right' ? block.imageAlign : 'center'
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -33,7 +34,7 @@ export default function DetailImage({ block }: Props) {
       <button
         ref={buttonRef}
         type="button"
-        className={`detail-image-open detail-image-${imageSize}`}
+        className={`detail-image-open detail-image-${imageSize} detail-image-align-${imageAlign}`}
         aria-label="사진 크게 보기"
         title="사진 크게 보기"
         onClick={() => setExpanded(true)}

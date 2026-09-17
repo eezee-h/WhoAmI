@@ -20,6 +20,11 @@ const IMAGE_SIZES = [
   { value: 'medium', label: '보통' },
   { value: 'full', label: '전체' },
 ] as const
+const IMAGE_ALIGNMENTS = [
+  { value: 'left', label: '왼쪽' },
+  { value: 'center', label: '가운데' },
+  { value: 'right', label: '오른쪽' },
+] as const
 
 interface TextBlockInputProps {
   block: DetailBlock
@@ -360,6 +365,18 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
                         aria-pressed={(block.imageSize ?? 'medium') === size.value}
                         onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageSize: size.value }) : item))}
                       >{size.label}</button>
+                    ))}
+                  </div>
+                )}
+                {block.type === 'image' && block.content && block.imageSize !== 'full' && (
+                  <div className="detail-image-alignments" role="group" aria-label="사진 정렬">
+                    {IMAGE_ALIGNMENTS.map(align => (
+                      <button
+                        key={align.value}
+                        type="button"
+                        aria-pressed={(block.imageAlign ?? 'center') === align.value}
+                        onClick={() => update(local.map((item, i) => i === idx ? patchBlock(item, { imageAlign: align.value }) : item))}
+                      >{align.label}</button>
                     ))}
                   </div>
                 )}

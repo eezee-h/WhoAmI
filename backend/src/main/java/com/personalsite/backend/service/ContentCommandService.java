@@ -335,6 +335,9 @@ public class ContentCommandService {
             if (blockDto.getImageSize() != null) {
                 payload.put("imageSize", blockDto.getImageSize());
             }
+            if (blockDto.getImageAlign() != null) {
+                payload.put("imageAlign", blockDto.getImageAlign());
+            }
 
             block.setPayload(payload);
             block.setSortOrder(blockIndex);

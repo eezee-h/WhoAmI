@@ -15,14 +15,15 @@ import com.personalsite.backend.repository.HomeProfileRepository;
 import com.personalsite.backend.repository.HomeSectionRepository;
 import com.personalsite.backend.repository.SiteUserRepository;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,10 +31,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ContentImageRoundTripTest {
+    static Stream<Arguments> imageSettings() {
+        return Stream.of(null, "small", "medium", "full")
+                .flatMap(size -> Stream.of(null, "left", "center", "right")
+                        .map(align -> Arguments.of(size, align)));
+    }
+
     @ParameterizedTest
-    @NullSource
-    @ValueSource(strings = {"small", "medium", "full"})
-    void imageSizeSurvivesSaveLoadAndJsonSerialization(String imageSize) throws Exception {
+    @MethodSource("imageSettings")
+    void imageSettingsSurviveSaveLoadAndJsonSerialization(String imageSize, String imageAlign) throws Exception {
         SiteUserRepository users = mock(SiteUserRepository.class);
         HomeProfileRepository profiles = mock(HomeProfileRepository.class);
         HomeSectionRepository sections = mock(HomeSectionRepository.class);
@@ -79,7 +85,7 @@ class ContentImageRoundTripTest {
                 .cards(List.of(SiteContentDto.CardItemDto.builder().type("project").title("사진")
                         .detailBlocks(List.of(SiteContentDto.DetailBlockDto.builder()
                                 .type("image").content("data:image/png;base64,fixture")
-                                .span("half").imageSize(imageSize).build())).build()))
+                                .span("half").imageSize(imageSize).imageAlign(imageAlign).build())).build()))
                 .build();
         ObjectMapper mapper = new ObjectMapper();
         SiteContentDto request = mapper.readValue(mapper.writeValueAsString(input), SiteContentDto.class);
@@ -95,9 +101,13 @@ class ContentImageRoundTripTest {
                     assertThat(block.getContent()).isEqualTo("data:image/png;base64,fixture");
                     assertThat(block.getSpan()).isEqualTo("half");
                     assertThat(block.getImageSize()).isEqualTo(imageSize);
+                    assertThat(block.getImageAlign()).isEqualTo(imageAlign);
                 }));
         if (imageSize == null) {
             assertThat(savedBlocks.getFirst().getPayload()).doesNotContainKey("imageSize");
+        }
+        if (imageAlign == null) {
+            assertThat(savedBlocks.getFirst().getPayload()).doesNotContainKey("imageAlign");
         }
     }
 }

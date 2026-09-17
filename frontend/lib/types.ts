@@ -7,6 +7,7 @@ export interface DetailBlock {
   span?: 'full' | 'half'
   textType?: 'normal' | 'heading'
   imageSize?: 'small' | 'medium' | 'full'
+  imageAlign?: 'left' | 'center' | 'right'
 }
 
 export interface ArchiveItem {
