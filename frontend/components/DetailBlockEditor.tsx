@@ -26,6 +26,12 @@ const IMAGE_ALIGNMENTS = [
   { value: 'right', label: '오른쪽' },
 ] as const
 
+function isBlockContentTarget(target: EventTarget | null) {
+  return target instanceof Element && !!target.closest(
+    'textarea, input, button, select, a, [contenteditable]:not([contenteditable="false"]), .detail-block-embed-edit, .detail-image-placeholder, dialog',
+  )
+}
+
 interface TextBlockInputProps {
   block: DetailBlock
   onChange: (content: string) => void
@@ -346,10 +352,35 @@ export default function DetailBlockEditor({ blocks, onChange, isAdmin, placehold
             key={getBlockKey(block)}
             className={`detail-block-item${block.span !== 'half' ? ' detail-block-full' : ''}${dragOverIdx === idx && dragIdx !== idx ? ' detail-block-drag-over' : ''}${dragIdx === idx ? ' detail-block-dragging' : ''}`}
             draggable
-            onDragStart={() => setDragIdx(idx)}
-            onDragOver={e => { e.preventDefault(); setDragOverIdx(idx) }}
-            onDragLeave={() => setDragOverIdx(null)}
-            onDrop={e => { e.preventDefault(); handleDrop(idx, e.currentTarget) }}
+            onPointerDownCapture={e => {
+              // Disable native block dragging before text selection starts.
+              // stopPropagation on a mouse event alone cannot do this.
+              e.currentTarget.draggable = e.button === 0 && !isBlockContentTarget(e.target)
+            }}
+            onDragStart={e => {
+              if (isBlockContentTarget(e.target)) { e.stopPropagation(); return }
+              if (!e.currentTarget.draggable) { e.preventDefault(); return }
+              e.dataTransfer.effectAllowed = 'move'
+              e.dataTransfer.setData('application/x-whoami-detail-block', String(getBlockKey(block)))
+              setDragIdx(idx)
+            }}
+            onDragOver={e => {
+              if (dragIdx === null) {
+                if (e.dataTransfer.types.includes('Files')) e.preventDefault()
+                return
+              }
+              e.preventDefault()
+              setDragOverIdx(idx)
+            }}
+            onDragLeave={() => { if (dragIdx !== null) setDragOverIdx(null) }}
+            onDrop={e => {
+              if (dragIdx === null) {
+                if (e.dataTransfer.types.includes('Files')) e.preventDefault()
+                return
+              }
+              e.preventDefault()
+              handleDrop(idx, e.currentTarget)
+            }}
             onDragEnd={() => { setDragIdx(null); setDragOverIdx(null) }}
             style={{ cursor: 'grab' }}
           >
